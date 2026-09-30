@@ -4,10 +4,11 @@
 Instead of the previous one-page version which I wrote with PyScript,
 this version is updated with Flask and JavaScript.
 
-Previous version: https://github.com/weifeimo/tic_tac_toe_PyScript_ver
+### Previous version
+https://github.com/weifeimo/tic_tac_toe_PyScript_ver
 
 
-### How to Play
+## How to Play
 run `app.py`
 
 
