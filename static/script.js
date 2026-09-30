@@ -1,12 +1,12 @@
 const cells = document.querySelectorAll(".cell");
 const message = document.querySelector("#message");
+const restartButton = document.querySelector("#restart");
 
 const playerSymbols = ["X", "O"];
 const turnMessages = ["X Turn", "O Turn"];
 
 const resultMessages = ["X Wins!", "O Wins!", "Draw!"];
 const DRAW = 2;
-
 
 // ------------------------------------------------
 // Flaskとの通信　＝＞　app.py
@@ -35,6 +35,7 @@ function displayMessage(value) {
 function displayFinishedMessage(value) {
   message.textContent = value;
   message.classList.add("winner-message");
+  restartButton.classList.remove("hidden");
 }
 
 function displayWinnerCells(pattern) {
@@ -45,6 +46,7 @@ function displayWinnerCells(pattern) {
 
 function clearStyles() {
   message.classList.remove("winner-message");
+  restartButton.classList.add("hidden");
   cells.forEach((cell) => {
     cell.classList.remove("winner");
   });
@@ -90,5 +92,7 @@ async function cellClick(position) {
 cells.forEach((cell, i) => {
   cell.addEventListener("click", () => cellClick(i));
 });
+
+restartButton.addEventListener("click", startGame);
 
 startGame();

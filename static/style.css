@@ -45,3 +45,17 @@ h3.winner-message {
 color: white;
 background-color: darkred;
 }
+
+/* --------RESTART--------- */
+#restart {
+    text-align: center;
+    display:block;
+    margin: 20px auto 0;
+    padding: 10px 24px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
