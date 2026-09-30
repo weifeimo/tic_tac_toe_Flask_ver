@@ -1,0 +1,47 @@
+#board{
+display: grid;
+grid-template-columns: 80px 80px 80px;
+grid-template-rows: 80px 80px 80px;
+gap: 5px;
+margin: 0 auto;
+width: max-content;
+background-color: rgb(127, 117, 104);
+}
+
+.cell {
+width: 80px;
+height: 80px;
+font-size: 72px;
+color: darkred;
+background-color: white;
+border: 0px;
+}
+
+/* --------TITLE--------- */
+h2 {
+text-align: center;
+color: darkred;
+}
+
+/* --------MESSAGE--------- */
+
+h3 {
+text-align: center;
+font-weight: normal;
+color: rgb(107, 49, 49);
+background-color: rgb(223, 219, 211);
+}
+
+/* -------------------------
+MESSAGE & CELLS COLOR EXCHANGE
+------------------------- */
+
+.winner {
+background-color: darkred;
+color: white;
+}
+
+h3.winner-message {
+color: white;
+background-color: darkred;
+}

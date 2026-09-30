@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>TIC TAC TOE</title>
+
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
+    
+    <script src="{{ url_for('static', filename='script.js') }}" 
+            defer></script>
+
+</head>
+
+
+<body>
+
+
+    <div id="tic-tac-toe">
+
+        <h2>TIC TAC TOE</h2>
+
+
+        <h3 id="message">X Turn</h3>
+
+
+        <div id="board">
+
+        {% for i in range(9) %}
+        <button id="pos-{{ i }}" class="cell"></button>
+        {% endfor %}
+
+        </div>
+
+    </div>
+    
+
+</body>
