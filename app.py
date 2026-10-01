@@ -1,7 +1,10 @@
 import os
+from dotenv import load_dotenv
 
 from flask import Flask, jsonify, render_template, session
 from game import TicTacToe
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ["SECRET_KEY"]
@@ -54,6 +57,7 @@ def api_play(position):
     game = load_game()
     if 0 <= position < 9:
         game.play_turn(position)
+    save_game(game)
     return jsonify(get_state(game))
 
 
