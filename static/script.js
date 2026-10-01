@@ -105,4 +105,4 @@ cells.forEach((cell, i) => {
 
 restartButton.addEventListener("click", startGame);
 
-startGame();
+loadGame();
