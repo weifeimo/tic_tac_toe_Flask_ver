@@ -1,65 +1,77 @@
 import os
-from dotenv import load_dotenv
-
-from flask import Flask, jsonify, render_template, session
-from game import TicTacToe
-
-load_dotenv()
-
-app = Flask(__name__)
-app.secret_key = os.environ["SECRET_KEY"]
 
 
-def load_game():
-    data = session.get("game")
-    if data is None:
-        game = TicTacToe()
-        game.start()
-        return game
-    return TicTacToe.from_dict(data)
+os.environ["SECRET_KEY"] = "test-secret-key"
+
+from app import app
 
 
-def save_game(game):
-    session["game"] = game.to_dict()
+def make_client():
+    app.config["TESTING"] = True
+    return app.test_client()
 
 
-def get_state(game):
-    return {
-        "cells": game.cells,
-        "player": game.player,
-        "game_running": game.game_running,
-        "winning_pattern": None if game.game_running else game.is_winner(),
-    }
+def test_start_returns_new_game():
+    client = make_client()
+
+    response = client.post("/api/start")
+
+    assert response.status_code == 200
+    assert response.json["cells"] == [None] * 9
+    assert response.json["player"] == 0
+    assert response.json["game_running"] is True
 
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+def test_play_is_kept_in_session():
+    client = make_client()
+    client.post("/api/start")
+
+    client.post("/api/play/0")
+    response = client.get("/api/state")
+
+    assert response.json["cells"][0] == 0   # X's mark is still there
+    assert response.json["player"] == 1     # turn to O
 
 
-@app.route("/api/state", methods=["GET"])
-def api_state():
-    game = load_game()
-    save_game(game)
-    return jsonify(get_state(game))
+def test_moves_accumulate_across_requests():
+    client = make_client()
+    client.post("/api/start")
+
+    client.post("/api/play/0")   # X
+    client.post("/api/play/4")   # O
+    response = client.get("/api/state")
+
+    assert response.json["cells"][0] == 0
+    assert response.json["cells"][4] == 1
 
 
-@app.route("/api/start", methods=["POST"])
-def api_start():
-    game = TicTacToe()
-    game.start()
-    save_game(game)
-    return jsonify(get_state(game))
+def test_invalid_position_is_ignored():
+    client = make_client()
+    client.post("/api/start")
+
+    response = client.post("/api/play/9")
+
+    assert response.json["cells"] == [None] * 9
+    assert response.json["player"] == 0
 
 
-@app.route("/api/play/<int:position>", methods=["POST"])
-def api_play(position):
-    game = load_game()
-    if 0 <= position < 9:
-        game.play_turn(position)
-    save_game(game)
-    return jsonify(get_state(game))
+def test_start_resets_the_game():
+    client = make_client()
+    client.post("/api/start")
+    client.post("/api/play/0")
+
+    response = client.post("/api/start")
+
+    assert response.json["cells"] == [None] * 9
 
 
-if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5001)
+def test_different_clients_have_separate_games():
+    client_a = make_client()
+    client_b = make_client()
+    client_a.post("/api/start")
+    client_b.post("/api/start")
+
+    client_a.post("/api/play/0")
+    response = client_b.get("/api/state")
+
+    assert response.json["cells"][0] is None   # B is not affected by A's move

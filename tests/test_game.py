@@ -1,160 +1,82 @@
-class TicTacToe:
+from game import TicTacToe
 
 
-    def start(self):
+def new_game():
+    game = TicTacToe()
+    game.start()
+    return game
 
-        # 0 = X
-        # 1 = O
 
-        self.player = 0
+def test_game_can_be_created():
+    game = new_game()
 
-        self.cells = [None] * 9
+    assert game.game_running is True
+    assert game.player == 0
+    assert game.cells == [None] * 9
 
-        self.game_running = True
 
+def test_play_turn_places_mark_and_switches_player():
+    game = new_game()
 
-    def play_turn(self, position):
+    game.play_turn(0)
 
+    assert game.cells[0] == 0   # X put into 0 position
+    assert game.player == 1     # turn to O
 
-        if not self.game_running:
 
-            return
+def test_cannot_play_on_occupied_cell():
+    game = new_game()
+    game.play_turn(0)
 
+    game.play_turn(0)           # try to play on the same cell
 
-        # Cell already occupied
-        if self.cells[position] is not None:
+    assert game.cells[0] == 0   # not overwritten
+    assert game.player == 1     # player not switched
 
-            return
+def test_winner_ends_the_game():
+    game = new_game()
 
+    # X: 0, 1, 2 / O: 3, 4
+    for position in [0, 3, 1, 4, 2]:
+        game.play_turn(position)
 
-        # Put player into cell
-        self.cells[position] = self.player
+    assert game.is_winner() == (0, 1, 2)
+    assert game.game_running is False
 
 
-        # Check game over
-        if not self.is_game_over():
+def test_cannot_play_after_game_over():
+    game = new_game()
+    for position in [0, 3, 1, 4, 2]:
+        game.play_turn(position)
 
-            self.next_player()
+    game.play_turn(8)
 
+    assert game.cells[8] is None
 
-    def next_player(self):
 
+def test_draw_ends_the_game():
+    game = new_game()
 
-        # 0 -> 1
-        # 1 -> 0
+    # 最终棋盘：
+    # X O X
+    # X O O
+    # O X X
+    for position in [0, 1, 2, 4, 3, 5, 7, 6, 8]:
+        game.play_turn(position)
 
-        self.player = (self.player + 1) % 2
+    assert game.is_winner() is None
+    assert game.is_draw() is True
+    assert game.game_running is False
 
 
-    def is_game_over(self):
+def test_to_dict_and_from_dict_restore_the_game():
+    game = new_game()
+    game.play_turn(0)
+    game.play_turn(4)
 
+    data = game.to_dict()
+    restored = TicTacToe.from_dict(data)
 
-        # -------------------------
-        # WINNER
-        # -------------------------
-
-        winning_pattern = (
-            self.is_winner()
-        )
-
-
-        if winning_pattern is not None:
-
-            self.game_running = False
-
-            return True
-
-
-        # -------------------------
-        # DRAW
-        # -------------------------
-
-        if self.is_draw():
-
-            self.game_running = False
-
-            return True
-
-
-        # -------------------------
-        # CONTINUE
-        # -------------------------
-
-        return False
-
-
-    # ------------------------------------------------
-    # WINNER CHECKER
-    # ------------------------------------------------
-
-    def is_winner(self):
-
-
-        win_patterns = [
-            (0, 1, 2), (3, 4, 5), (6, 7, 8),
-            (0, 3, 6), (1, 4, 7), (2, 5, 8),
-            (0, 4, 8), (2, 4, 6)
-        ]
-
-
-        for a, b, c in win_patterns:
-
-
-            if (
-                self.cells[a]
-                == self.cells[b]
-                == self.cells[c]
-                == self.player
-            ):
-
-                return (a, b, c)
-
-
-        return None
-
-
-    # ------------------------------------------------
-    # DRAW
-    # ------------------------------------------------
-
-    def is_draw(self):
-
-
-        return all(
-
-            value is not None
-
-            for value in self.cells
-
-        )
-
-
-    # ------------------------------------------------
-    # SESSION (save / load)
-    # ------------------------------------------------
-
-    def to_dict(self):
-
-        return {
-
-            "player": self.player,
-
-            "cells": self.cells,
-
-            "game_running": self.game_running
-
-        }
-
-
-    @classmethod
-    def from_dict(cls, data):
-
-        game = cls()
-
-        game.player = data["player"]
-
-        game.cells = data["cells"]
-
-        game.game_running = data["game_running"]
-
-        return game
+    assert restored.cells == game.cells
+    assert restored.player == game.player
+    assert restored.game_running == game.game_running
