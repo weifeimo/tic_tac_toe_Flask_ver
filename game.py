@@ -1,3 +1,10 @@
+import json
+import os
+import uuid
+
+RESULT_FILE = "game_results.json"              # ゲーム結果の保存ファイル
+
+
 class TicTacToe:
 
 
@@ -11,6 +18,10 @@ class TicTacToe:
         self.cells = [None] * 9
 
         self.game_running = True
+
+        self.game_id = str(uuid.uuid4())       #ユニークID
+
+        self.saved = False                     #重複保存を避ける
 
 
     def play_turn(self, position):
@@ -35,6 +46,10 @@ class TicTacToe:
         if not self.is_game_over():
 
             self.next_player()
+
+        else:
+
+            self.save_result()
 
 
     def next_player(self):
@@ -130,6 +145,50 @@ class TicTacToe:
 
 
     # ------------------------------------------------
+    # SAVE RESULT
+    # ------------------------------------------------
+
+    def save_result(self):
+
+        # 重複保存を避ける
+        if self.saved:
+
+            return
+
+        #辞書形式でゲームの結果を保存
+        record = {
+
+            "game_id": self.game_id,
+
+            "player": self.player,
+
+            "cells": self.cells
+
+        }
+
+
+        #空リストのファイル作成
+        results = []
+
+        if os.path.exists(RESULT_FILE):
+
+            with open(RESULT_FILE, "r", encoding="utf-8") as f:
+
+                results = json.load(f)
+
+
+        # 既存ファイルに新しい結果を追加する
+        results.append(record)
+
+        with open(RESULT_FILE, "w", encoding="utf-8") as f:
+
+            json.dump(results, f, ensure_ascii=False, indent=2)
+
+
+        self.saved = True
+
+
+    # ------------------------------------------------
     # SESSION (save / load)
     # ------------------------------------------------
 
@@ -141,7 +200,11 @@ class TicTacToe:
 
             "cells": self.cells,
 
-            "game_running": self.game_running
+            "game_running": self.game_running,
+
+            "game_id": self.game_id,
+
+            "saved": self.saved
 
         }
 
@@ -156,5 +219,9 @@ class TicTacToe:
         game.cells = data["cells"]
 
         game.game_running = data["game_running"]
+
+        game.game_id = data["game_id"]
+
+        game.saved = data["saved"]
 
         return game
