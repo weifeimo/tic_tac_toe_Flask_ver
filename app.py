@@ -24,11 +24,27 @@ def save_game(game):
 
 
 def get_state(game):
+    winning_pattern = None
+    winner = None
+    status = "playing"
+
+    if not game.game_running:
+        winning_pattern = game.is_winner()
+
+        if winning_pattern is not None:
+            status = "win"
+            winner = game.player      # 0 = X, 1 = O
+        else:
+            status = "draw"
+
     return {
         "cells": game.cells,
         "player": game.player,
         "game_running": game.game_running,
-        "winning_pattern": None if game.game_running else game.is_winner(),
+        "game_id": game.game_id,
+        "status": status,                 # "playing" / "win" / "draw"
+        "winner": winner,                 # 0 / 1 / None
+        "winning_pattern": list(winning_pattern) if winning_pattern else None,
     }
 
 

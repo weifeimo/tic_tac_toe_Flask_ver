@@ -65,10 +65,10 @@ function render(state) {
   clearStyles();
   updateCells(state.cells);
 
-  if (state.game_running) {
+  if (state.status === "playing") {
     displayMessage(turnMessages[state.player]);
-  } else if (state.winning_pattern) {
-    displayFinishedMessage(resultMessages[state.player]);
+  } else if (state.status === "win") {
+    displayFinishedMessage(resultMessages[state.winner]);
     displayWinnerCells(state.winning_pattern);
   } else {
     displayFinishedMessage(resultMessages[DRAW]);

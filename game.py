@@ -155,7 +155,7 @@ class TicTacToe:
 
             return
 
-        #辞書形式でゲームの結果を保存
+        #辞書形式でゲームの結果を記録
         record = {
 
             "game_id": self.game_id,
