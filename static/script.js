@@ -8,6 +8,9 @@ const turnMessages = ["X Turn", "O Turn"];
 const resultMessages = ["X Wins!", "O Wins!", "Draw!"];
 const DRAW = 2;
 
+let gameOver = false;
+
+
 // ------------------------------------------------
 // Flaskとの通信　＝＞　app.py
 // ------------------------------------------------
@@ -19,7 +22,7 @@ async function post(url) {
 
 
 // ------------------------------------------------
-// ウェブページの更新
+// 画面更新用の関数
 // ------------------------------------------------
 
 function updateCells(values) {
@@ -54,10 +57,11 @@ function clearStyles() {
 
 
 // ------------------------------------------------
-// サーバーの返答　⇒　レンダリング
+// サーバーから返された状態を画面に反映
 // ------------------------------------------------
 
 function render(state) {
+  gameOver = !state.game_running;
   clearStyles();
   updateCells(state.cells);
 
@@ -76,17 +80,23 @@ function render(state) {
 // ゲーム操作
 // ------------------------------------------------
 
+async function loadGame() {
+  const response = await fetch("/api/state");
+  render(await response.json());
+}
+
 async function startGame() {
   render(await post("/api/start"));
 }
 
 async function cellClick(position) {
+  if (gameOver) return;
   render(await post(`/api/play/${position}`));
 }
 
 
 // ------------------------------------------------
-// 初期化
+// 初期化 & イベント登録
 // ------------------------------------------------
 
 cells.forEach((cell, i) => {
@@ -95,4 +105,4 @@ cells.forEach((cell, i) => {
 
 restartButton.addEventListener("click", startGame);
 
-startGame();
+loadGame();

@@ -129,6 +129,32 @@ class TicTacToe:
         )
 
 
-game = TicTacToe()
+    # ------------------------------------------------
+    # SESSION (save / load)
+    # ------------------------------------------------
 
-game.start()
+    def to_dict(self):
+
+        return {
+
+            "player": self.player,
+
+            "cells": self.cells,
+
+            "game_running": self.game_running
+
+        }
+
+
+    @classmethod
+    def from_dict(cls, data):
+
+        game = cls()
+
+        game.player = data["player"]
+
+        game.cells = data["cells"]
+
+        game.game_running = data["game_running"]
+
+        return game
