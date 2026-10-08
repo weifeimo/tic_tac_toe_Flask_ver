@@ -24,16 +24,14 @@ def save_game(game):
 
 
 def get_state(game):
-    winning_pattern = None
+    winning_pattern = game.winning_pattern
     winner = None
     status = "playing"
 
     if not game.game_running:
-        winning_pattern = game.is_winner()
-
         if winning_pattern is not None:
             status = "win"
-            winner = game.player      # 0 = X, 1 = O
+            winner = game.cells[winning_pattern[0]]   # 勝ったマスの持ち主 (0 = X, 1 = O)
         else:
             status = "draw"
 
@@ -44,7 +42,7 @@ def get_state(game):
         "game_id": game.game_id,
         "status": status,                 # "playing" / "win" / "draw"
         "winner": winner,                 # 0 / 1 / None
-        "winning_pattern": list(winning_pattern) if winning_pattern else None,
+        "winning_pattern": winning_pattern,   # list（例: [0, 1, 2]）または None
     }
 
 
