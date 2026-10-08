@@ -23,6 +23,7 @@ class TicTacToe:
 
         self.saved = False                     #重複保存を避ける
 
+        self.winning_pattern = None            # 勝った3マス（勝者なし/対局中は None）
 
     def play_turn(self, position):
 
@@ -68,12 +69,12 @@ class TicTacToe:
         # WINNER
         # -------------------------
 
-        winning_pattern = (
-            self.is_winner()
-        )
-
+        winning_pattern = self.is_winner()
 
         if winning_pattern is not None:
+
+            # 勝ったマスをゲーム本体に状態として保存
+            self.winning_pattern = list(winning_pattern)
 
             self.game_running = False
 
@@ -204,7 +205,9 @@ class TicTacToe:
 
             "game_id": self.game_id,
 
-            "saved": self.saved
+            "saved": self.saved,
+
+            "winning_pattern": self.winning_pattern
 
         }
 
@@ -223,5 +226,7 @@ class TicTacToe:
         game.game_id = data["game_id"]
 
         game.saved = data["saved"]
+
+        game.winning_pattern = data.get("winning_pattern")
 
         return game
