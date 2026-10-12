@@ -25,8 +25,8 @@ class TicTacToe:
 
         self.winning_pattern = None            # 勝った3マス（勝者なし/対局中は None）
 
-    def play_turn(self, position):
 
+    def play_turn(self, position):
 
         if not self.game_running:
 
@@ -54,16 +54,12 @@ class TicTacToe:
 
 
     def next_player(self):
-
-
         # 0 -> 1
         # 1 -> 0
-
         self.player = (self.player + 1) % 2
 
 
     def is_game_over(self):
-
 
         # -------------------------
         # WINNER
@@ -80,7 +76,6 @@ class TicTacToe:
 
             return True
 
-
         # -------------------------
         # DRAW
         # -------------------------
@@ -90,7 +85,6 @@ class TicTacToe:
             self.game_running = False
 
             return True
-
 
         # -------------------------
         # CONTINUE
@@ -102,9 +96,7 @@ class TicTacToe:
     # ------------------------------------------------
     # WINNER CHECKER
     # ------------------------------------------------
-
     def is_winner(self):
-
 
         win_patterns = [
             (0, 1, 2), (3, 4, 5), (6, 7, 8),
@@ -112,19 +104,14 @@ class TicTacToe:
             (0, 4, 8), (2, 4, 6)
         ]
 
-
         for a, b, c in win_patterns:
-
-
             if (
                 self.cells[a]
                 == self.cells[b]
                 == self.cells[c]
                 == self.player
             ):
-
                 return (a, b, c)
-
 
         return None
 
@@ -132,9 +119,7 @@ class TicTacToe:
     # ------------------------------------------------
     # DRAW
     # ------------------------------------------------
-
     def is_draw(self):
-
 
         return all(
 
@@ -148,43 +133,32 @@ class TicTacToe:
     # ------------------------------------------------
     # SAVE RESULT
     # ------------------------------------------------
-
     def save_result(self):
 
         # 重複保存を避ける
         if self.saved:
-
             return
 
         #辞書形式でゲームの結果を記録
         record = {
-
             "game_id": self.game_id,
 
             "player": self.player,
 
             "cells": self.cells
-
         }
-
 
         #空リストのファイル作成
         results = []
 
         if os.path.exists(RESULT_FILE):
-
             with open(RESULT_FILE, "r", encoding="utf-8") as f:
-
                 results = json.load(f)
-
 
         # 既存ファイルに新しい結果を追加する
         results.append(record)
-
         with open(RESULT_FILE, "w", encoding="utf-8") as f:
-
             json.dump(results, f, ensure_ascii=False, indent=2)
-
 
         self.saved = True
 
@@ -192,11 +166,9 @@ class TicTacToe:
     # ------------------------------------------------
     # SESSION (save / load)
     # ------------------------------------------------
-
     def to_dict(self):
 
         return {
-
             "player": self.player,
 
             "cells": self.cells,
@@ -208,7 +180,6 @@ class TicTacToe:
             "saved": self.saved,
 
             "winning_pattern": self.winning_pattern
-
         }
 
 

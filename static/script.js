@@ -2,11 +2,11 @@ const cells = document.querySelectorAll(".cell");
 const message = document.querySelector("#message");
 const restartButton = document.querySelector("#restart");
 
-const playerSymbols = ["X", "O"];
+const playerSymbols = ["X", "O"]; // 0 = X, 1 = O
 const turnMessages = ["X Turn", "O Turn"];
 
 const resultMessages = ["X Wins!", "O Wins!", "Draw!"];
-const DRAW = 2;
+const DRAW = 2;   // 0 = X Wins, 1 = O Wins, 2 = Draw
 
 let gameOver = false;
 
@@ -25,24 +25,24 @@ async function post(url) {
 // 画面更新用の関数
 // ------------------------------------------------
 
-function updateCells(values) {
-  values.forEach((value, i) => {
-    cells[i].textContent = value === null ? "" : playerSymbols[value];
+function updateCells(symbols) {
+  symbols.forEach((symbol, i) => {
+    cells[i].textContent = symbol === null ? "" : playerSymbols[symbol];
   });
 }
 
-function displayMessage(value) {
-  message.textContent = value;
+function displayMessage(turnMessage) {
+  message.textContent = turnMessage;
 }
 
-function displayFinishedMessage(value) {
-  message.textContent = value;
+function displayFinishedMessage(resultMessages) {
+  message.textContent = resultMessages;
   message.classList.add("winner-message");
   restartButton.classList.remove("hidden");
 }
 
-function displayWinnerCells(pattern) {
-  pattern.forEach((position) => {
+function displayWinnerCells(symbols) {
+  symbols.forEach((position) => {
     cells[position].classList.add("winner");
   });
 }
