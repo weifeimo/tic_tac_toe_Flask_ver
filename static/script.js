@@ -26,8 +26,8 @@ async function post(url) {
 // ------------------------------------------------
 
 function updateCells(symbols) {
-  symbols.forEach((symbol, i) => {
-    cells[i].textContent = symbol === null ? "" : playerSymbols[symbol];
+  symbols.forEach((symbol, position) => {
+    cells[position].textContent = symbol === null ? "" : playerSymbols[symbol];
   });
 }
 
