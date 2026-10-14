@@ -14,6 +14,18 @@ let syncFailed = false;
 
 
 // ------------------------------------------------
+// 通信失敗後の再同期ボタン
+// ------------------------------------------------
+
+const syncButton = document.createElement("button");
+
+syncButton.type = "button";
+syncButton.textContent = "RetrySync";
+syncButton.hidden = true;
+message.insertAdjacentElement("afterend", syncButton);
+
+
+// ------------------------------------------------
 // Flaskとの通信　＝＞　app.py
 // ------------------------------------------------
 
@@ -39,7 +51,11 @@ async function post(url) {
 // ------------------------------------------------
 
 function validateState(state) {
-  if (state === null || typeof state !== "object") {
+  if (
+    state === null ||
+    typeof state !== "object" ||
+    Array.isArray(state)
+  ) {
     throw new Error("Invalid game state");
   }
 
@@ -63,6 +79,14 @@ function validateState(state) {
 
   if (!["playing", "win", "draw"].includes(state.status)) {
     throw new Error("Invalid status");
+  }
+
+  if (state.status === "playing" && !state.game_running) {
+    throw new Error("Invalid playing state");
+  }
+
+  if (state.status !== "playing" && state.game_running) {
+    throw new Error("Invalid finished state");
   }
 
   if (state.status === "win") {
@@ -146,21 +170,29 @@ function render(state) {
 
 
 // ------------------------------------------------
+// 操作状態の更新
+// ------------------------------------------------
+
+function updateControls() {
+  cells.forEach((cell) => {
+    cell.disabled = busy || gameOver || syncFailed;
+  });
+
+  restartButton.disabled = busy || syncFailed;
+  syncButton.disabled = busy;
+  syncButton.hidden = !syncFailed;
+}
+
+
+// ------------------------------------------------
 // リクエストの実行とエラー処理
 // ------------------------------------------------
 
-async function runRequest(action) {
-  // 処理中、または通信失敗後は新しいリクエストを送らない
-  if (busy || syncFailed) return;
+async function runRequest(action, allowFailed = false) {
+  if (busy || (syncFailed && !allowFailed)) return;
 
   busy = true;
-
-  // リクエスト処理中は操作を無効にする
-  cells.forEach((cell) => {
-    cell.disabled = true;
-  });
-
-  restartButton.disabled = true;
+  updateControls();
 
   try {
     await action();
@@ -172,16 +204,10 @@ async function runRequest(action) {
 
     message.classList.remove("winner-message");
     message.textContent =
-      "通信に失敗しました。ページを再読み込みして、ゲームの状態を確認してください。";
+      "通信に失敗しました。RetrySyncでゲームの状態を再取得してください。";
   } finally {
     busy = false;
-
-    // ゲーム終了時や通信失敗後は操作できないようにする
-    cells.forEach((cell) => {
-      cell.disabled = gameOver || syncFailed;
-    });
-
-    restartButton.disabled = syncFailed;
+    updateControls();
   }
 }
 
@@ -195,8 +221,10 @@ async function loadGame() {
     const state = await requestJSON("/api/state");
 
     validateState(state);
+
     render(state);
-  });
+    syncFailed = false;
+  }, true);
 }
 
 async function startGame() {
@@ -204,12 +232,14 @@ async function startGame() {
     const state = await post("/api/start");
 
     validateState(state);
+
     render(state);
+    syncFailed = false;
   });
 }
 
 async function cellClick(position) {
-  if (gameOver) return;
+  if (gameOver || syncFailed) return;
 
   await runRequest(async () => {
     const state = await post(`/api/play/${position}`);
@@ -229,5 +259,6 @@ cells.forEach((cell, i) => {
 });
 
 restartButton.addEventListener("click", startGame);
+syncButton.addEventListener("click", loadGame);
 
 loadGame();
