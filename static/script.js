@@ -35,6 +35,59 @@ async function post(url) {
 
 
 // ------------------------------------------------
+// サーバーから返されたデータの検証
+// ------------------------------------------------
+
+function validateState(state) {
+  if (state === null || typeof state !== "object") {
+    throw new Error("Invalid game state");
+  }
+
+  if (typeof state.game_running !== "boolean") {
+    throw new Error("Invalid game_running");
+  }
+
+  if (!Array.isArray(state.cells) || state.cells.length !== 9) {
+    throw new Error("Invalid cells");
+  }
+
+  if (!state.cells.every(
+    (cell) => cell === null || cell === 0 || cell === 1
+  )) {
+    throw new Error("Invalid cell value");
+  }
+
+  if (state.player !== 0 && state.player !== 1) {
+    throw new Error("Invalid player");
+  }
+
+  if (!["playing", "win", "draw"].includes(state.status)) {
+    throw new Error("Invalid status");
+  }
+
+  if (state.status === "win") {
+    if (state.winner !== 0 && state.winner !== 1) {
+      throw new Error("Invalid winner");
+    }
+
+    if (
+      !Array.isArray(state.winning_pattern) ||
+      state.winning_pattern.length !== 3 ||
+      !state.winning_pattern.every(
+        (position) =>
+          Number.isInteger(position) &&
+          position >= 0 &&
+          position < 9
+      ) ||
+      new Set(state.winning_pattern).size !== 3
+    ) {
+      throw new Error("Invalid winning_pattern");
+    }
+  }
+}
+
+
+// ------------------------------------------------
 // 画面更新用の関数
 // ------------------------------------------------
 
@@ -106,6 +159,7 @@ async function runRequest(action) {
   cells.forEach((cell) => {
     cell.disabled = true;
   });
+
   restartButton.disabled = true;
 
   try {
@@ -139,6 +193,8 @@ async function runRequest(action) {
 async function loadGame() {
   await runRequest(async () => {
     const state = await requestJSON("/api/state");
+
+    validateState(state);
     render(state);
   });
 }
@@ -146,6 +202,8 @@ async function loadGame() {
 async function startGame() {
   await runRequest(async () => {
     const state = await post("/api/start");
+
+    validateState(state);
     render(state);
   });
 }
@@ -155,6 +213,8 @@ async function cellClick(position) {
 
   await runRequest(async () => {
     const state = await post(`/api/play/${position}`);
+
+    validateState(state);
     render(state);
   });
 }
