@@ -35,8 +35,8 @@ function displayMessage(turnMessage) {
   message.textContent = turnMessage;
 }
 
-function displayFinishedMessage(resultMessages) {
-  message.textContent = resultMessages;
+function displayFinishedMessage(resultMessage) {
+  message.textContent = resultMessage;
   message.classList.add("winner-message");
   restartButton.classList.remove("hidden");
 }
