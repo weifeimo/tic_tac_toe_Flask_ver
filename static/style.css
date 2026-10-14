@@ -1,61 +1,57 @@
-#board{
-display: grid;
-grid-template-columns: 80px 80px 80px;
-grid-template-rows: 80px 80px 80px;
-gap: 5px;
-margin: 0 auto;
-width: max-content;
-background-color: rgb(127, 117, 104);
+#board {
+    display: grid;
+    grid-template-columns: 80px 80px 80px;
+    grid-template-rows: 80px 80px 80px;
+    gap: 5px;
+    margin: 0 auto;
+    width: max-content;
+    background-color: rgb(127, 117, 104);
 }
 
 .cell {
-width: 80px;
-height: 80px;
-font-size: 72px;
-color: darkred;
-background-color: white;
-border: 0px;
+    width: 80px;
+    height: 80px;
+    font-size: 72px;
+    color: darkred;
+    background-color: white;
+    border: 0;
+    user-select: none;
 }
 
-/* --------TITLE--------- */
+/* -------- TITLE -------- */
 h2 {
-text-align: center;
-color: darkred;
+    text-align: center;
+    color: darkred;
 }
 
-/* --------MESSAGE--------- */
-
+/* -------- MESSAGE -------- */
 h3 {
-text-align: center;
-font-weight: normal;
-color: rgb(107, 49, 49);
-background-color: rgb(223, 219, 211);
+    text-align: center;
+    font-weight: normal;
+    color: rgb(107, 49, 49);
+    background-color: rgb(223, 219, 211);
 }
 
-/* -------------------------
-MESSAGE & CELLS COLOR EXCHANGE
-------------------------- */
-
+/* ----- MESSAGE & CELLS COLOR EXCHANGE ----- */
 .winner {
-background-color: darkred;
-color: white;
+    background-color: darkred;
+    color: white;
 }
 
 h3.winner-message {
-color: white;
-background-color: darkred;
+    color: white;
+    background-color: darkred;
 }
 
-/* --------RESTART--------- */
+/* -------- RESTART -------- */
 #restart {
-    text-align: center;
-    display:block;
+    display: block;
     margin: 20px auto 0;
     padding: 10px 24px;
     font-size: 1rem;
     cursor: pointer;
 }
 
-.hidden {
-    display: none !important;
+#restart.hidden {
+    display: none;
 }
