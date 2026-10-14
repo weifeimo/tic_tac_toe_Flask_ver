@@ -6,18 +6,31 @@ const playerSymbols = ["X", "O"]; // 0 = X, 1 = O
 const turnMessages = ["X Turn", "O Turn"];
 
 const resultMessages = ["X Wins!", "O Wins!", "Draw!"];
-const DRAW = 2;   // 0 = X Wins, 1 = O Wins, 2 = Draw
+const DRAW = 2;  // 0 = X Wins, 1 = O Wins, 2 = Draw
 
 let gameOver = false;
+let busy = false;
+let syncFailed = false;
 
 
 // ------------------------------------------------
 // Flaskとの通信　＝＞　app.py
 // ------------------------------------------------
 
-async function post(url) {
-  const response = await fetch(url, { method: "POST" });
+async function requestJSON(url, options = {}) {
+  const response = await fetch(url, options);
+
+  // HTTPエラーを例外として扱う
+  if (!response.ok) {
+    throw new Error(`HTTP error: ${response.status}`);
+  }
+
+  // JSONの解析に失敗した場合も例外が発生する
   return response.json();
+}
+
+async function post(url) {
+  return requestJSON(url, { method: "POST" });
 }
 
 
@@ -27,7 +40,8 @@ async function post(url) {
 
 function updateCells(symbols) {
   symbols.forEach((symbol, position) => {
-    cells[position].textContent = symbol === null ? "" : playerSymbols[symbol];
+    cells[position].textContent =
+      symbol === null ? "" : playerSymbols[symbol];
   });
 }
 
@@ -50,6 +64,7 @@ function displayWinnerCells(symbols) {
 function clearStyles() {
   message.classList.remove("winner-message");
   restartButton.classList.add("hidden");
+
   cells.forEach((cell) => {
     cell.classList.remove("winner");
   });
@@ -62,6 +77,7 @@ function clearStyles() {
 
 function render(state) {
   gameOver = !state.game_running;
+
   clearStyles();
   updateCells(state.cells);
 
@@ -77,21 +93,70 @@ function render(state) {
 
 
 // ------------------------------------------------
+// リクエストの実行とエラー処理
+// ------------------------------------------------
+
+async function runRequest(action) {
+  // 処理中、または通信失敗後は新しいリクエストを送らない
+  if (busy || syncFailed) return;
+
+  busy = true;
+
+  // リクエスト処理中は操作を無効にする
+  cells.forEach((cell) => {
+    cell.disabled = true;
+  });
+  restartButton.disabled = true;
+
+  try {
+    await action();
+  } catch (error) {
+    console.error("通信エラー:", error);
+
+    // 結果が不明な操作を繰り返さない
+    syncFailed = true;
+
+    message.classList.remove("winner-message");
+    message.textContent =
+      "通信に失敗しました。ページを再読み込みして、ゲームの状態を確認してください。";
+  } finally {
+    busy = false;
+
+    // ゲーム終了時や通信失敗後は操作できないようにする
+    cells.forEach((cell) => {
+      cell.disabled = gameOver || syncFailed;
+    });
+
+    restartButton.disabled = syncFailed;
+  }
+}
+
+
+// ------------------------------------------------
 // ゲーム操作
 // ------------------------------------------------
 
 async function loadGame() {
-  const response = await fetch("/api/state");
-  render(await response.json());
+  await runRequest(async () => {
+    const state = await requestJSON("/api/state");
+    render(state);
+  });
 }
 
 async function startGame() {
-  render(await post("/api/start"));
+  await runRequest(async () => {
+    const state = await post("/api/start");
+    render(state);
+  });
 }
 
 async function cellClick(position) {
   if (gameOver) return;
-  render(await post(`/api/play/${position}`));
+
+  await runRequest(async () => {
+    const state = await post(`/api/play/${position}`);
+    render(state);
+  });
 }
 
 
