@@ -19,27 +19,28 @@ def load_game():
     return TicTacToe.from_dict(data)
 
 
-def save_game(game):
-    session["game"] = game.to_dict()
+def save_game(data):
+    session["game"] = data.to_dict()
 
 
-def get_state(game):
-    winning_pattern = game.winning_pattern
+def get_state(data):
+    winning_pattern = data.winning_pattern
     winner = None
     status = "playing"
 
-    if not game.game_running:
+    if not data.game_running:
         if winning_pattern is not None:
             status = "win"
-            winner = game.cells[winning_pattern[0]]   # 勝ったマスの持ち主 (0 = X, 1 = O)
+            winner = data.cells[winning_pattern[0]]
+            # 勝ったマスの持ち主 (0 = X, 1 = O)
         else:
             status = "draw"
 
     return {
-        "cells": game.cells,
-        "player": game.player,
-        "game_running": game.game_running,
-        "game_id": game.game_id,
+        "cells": data.cells,
+        "player": data.player,
+        "game_running": data.game_running,
+        "game_id": data.game_id,
         "status": status,                 # "playing" / "win" / "draw"
         "winner": winner,                 # 0 / 1 / None
         "winning_pattern": winning_pattern,   # list（例: [0, 1, 2]）または None

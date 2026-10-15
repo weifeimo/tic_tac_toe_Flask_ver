@@ -21,7 +21,7 @@
 <body>
 
 
-    <div id="tic-tac-toe">
+    <main>
 
         <h2>TIC TAC TOE</h2>
 
@@ -32,14 +32,14 @@
         <div id="board">
 
         {% for i in range(9) %}
-        <button id="pos-{{ i }}" class="cell"></button>
+        <button id="{{ i }}" class="cell"></button>
         {% endfor %}
 
         </div>
 
         <button id="restart" class="hidden">RESTART</button>
 
-    </div>
+    </main>
 
 
 </body>
