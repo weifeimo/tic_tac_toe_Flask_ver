@@ -59,7 +59,18 @@ h3.winner-message {
 .sync-button {
     display: block;
     margin: 20px auto 0;
-    padding: 10px 24px;
+    padding: 5px 24px;
     font-size: 1rem;
     cursor: pointer;
+    background-color: darkred;  /* 按钮颜色 */
+    color: white;             /* 字体颜色 */
+    border: none;
+}
+
+.sync-button:hover {
+    background-color: rgb(118, 78, 78);  /* 鼠标悬停时的颜色，可选 */
+}
+
+.sync-button[hidden] {
+    display: none;
 }

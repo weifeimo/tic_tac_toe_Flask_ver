@@ -23,7 +23,7 @@ syncButton.type = "button";
 syncButton.textContent = "RetrySync";
 syncButton.classList.add("sync-button");
 syncButton.hidden = true;
-message.insertAdjacentElement("afterend", syncButton);
+restartButton.insertAdjacentElement("afterend", syncButton);
 
 
 // ------------------------------------------------
