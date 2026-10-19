@@ -3,12 +3,14 @@ from dotenv import load_dotenv
 
 from flask import Flask, jsonify, render_template, session
 from game import TicTacToe
+from db_check import bp as db_check_bp
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")  # DEVELOPMENT only
 
+app.register_blueprint(db_check_bp)
 
 def load_game():
     data = session.get("game")
