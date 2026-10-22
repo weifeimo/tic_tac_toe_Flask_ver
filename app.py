@@ -82,7 +82,7 @@ def api_play(position):
     game = load_game()
     if 0 <= position < 9:
         game.play_turn(position)
-    save_game(game)
+        save_game(game)
     return jsonify(get_state(game))
 
 
