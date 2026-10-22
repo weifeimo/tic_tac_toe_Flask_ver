@@ -66,7 +66,7 @@ python app.py
 
 ## データベース構成
 
-ゲームの状態は PostgreSQL の `games` テーブルに保存されます（1ゲーム = 1行）。Flask のセッションには `game_id` だけを保存し、盤面などの状態は DB から取得します。
+ゲームの状態は PostgreSQL の `games` テーブルに保存されます（1ゲーム = 1行のレコード作成）。Flask のセッションには `game_id` だけを保存し、盤面などの状態は DB から取得します。
 
 ### テーブル構成
 
@@ -107,13 +107,6 @@ macOS / Linux:
 ```
 set -a; source .env; set +a
 docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < schema.sql
-```
-
-Windows (PowerShell):
-
-```
-Get-Content .env | ForEach-Object { if ($_ -match '^\s*([^#=]+)=(.*)$') { Set-Item "env:$($Matches[1].Trim())" $Matches[2].Trim() } }
-Get-Content schema.sql | docker compose exec -T db psql -U $env:POSTGRES_USER -d $env:POSTGRES_DB
 ```
 
 `CREATE TABLE IF NOT EXISTS` を使っているため、繰り返し実行してもエラーになりません。ただし、すでに旧い定義のテーブルがある場合は変更が反映されません。作り直す場合は `DROP TABLE games;` を実行してから再度作成してください。
