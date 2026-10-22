@@ -18,6 +18,7 @@ def insert_game(game):
         with conn:  # 成功すれば commit、例外なら rollback
             with conn.cursor() as cur:
                 cur.execute(
+                    #SQL
                     """
                     INSERT INTO games
                         (game_id, player, cells, game_running, winning_pattern)
@@ -36,7 +37,7 @@ def insert_game(game):
 
 
 def get_game(game_id):
-    """game_id で1局を取得して TicTacToe にして返す。なければ None。"""
+    """game_id で1局を取得して TicTacToe（Python list）にして返す。なければ None。"""
     conn = get_connection()
     try:
         with conn.cursor() as cur:
@@ -47,7 +48,7 @@ def get_game(game_id):
                 FROM games
                 WHERE game_id = %s
                 """,
-                (game_id,),
+                (game_id,), #tuple要素、SQLパラメータに渡す。文字列ではない。
             )
             row = cur.fetchone()
     finally:
