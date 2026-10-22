@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 from flask import Flask, jsonify, render_template, session
 from game import TicTacToe
+from repository import get_game, insert_game, update_game
 from db_check import bp as db_check_bp
 
 load_dotenv()
@@ -13,16 +14,23 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")  # DEVELOPMENT o
 app.register_blueprint(db_check_bp)
 
 def load_game():
-    data = session.get("game")
-    if data is None:
-        game = TicTacToe()
-        game.start()
-        return game
-    return TicTacToe.from_dict(data)
+    """session の game_id から DB のゲームを取得する。なければ新規作成して保存する。"""
+    game_id = session.get("game_id")
+    if game_id is not None:
+        game = get_game(game_id)
+        if game is not None:
+            return game
+
+    # session に game_id がない、または DB に該当行がない場合は新しく始める
+    game = TicTacToe()
+    game.start()
+    insert_game(game)
+    session["game_id"] = game.game_id
+    return game
 
 
-def save_game(data):
-    session["game"] = data.to_dict()
+def save_game(game):
+    update_game(game)
 
 
 def get_state(data):
@@ -57,7 +65,6 @@ def index():
 @app.route("/api/state", methods=["GET"])
 def api_state():
     game = load_game()
-    save_game(game)
     return jsonify(get_state(game))
 
 
@@ -65,7 +72,7 @@ def api_state():
 def api_start():
     game = TicTacToe()
     game.start()
-    save_game(game)
+    insert_game(game)
     return jsonify(get_state(game))
 
 
