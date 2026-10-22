@@ -196,7 +196,7 @@ class TicTacToe:
 
         game.game_id = data["game_id"]
 
-        game.saved = data["saved"]
+        game.saved = data.get("saved", False)
 
         game.winning_pattern = data.get("winning_pattern")
 
