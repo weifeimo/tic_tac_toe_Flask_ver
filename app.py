@@ -73,6 +73,7 @@ def api_start():
     game = TicTacToe()
     game.start()
     insert_game(game)
+    session["game_id"] = game.game_id
     return jsonify(get_state(game))
 
 
