@@ -5,10 +5,34 @@ from game import TicTacToe
 
 def _json_or_none(value):
     # None は JSON の null ではなく SQL の NULL として保存する
-    return Json(value) if value is not None else None
+    if value is not None:
+        return Json(value)
+    else:
+        return None
 
 
-# insert_game は前回のまま（winning_pattern の処理を _json_or_none に置き換えてもOK）
+def insert_game(game):
+    """新しいゲームを games テーブルに1行追加する。"""
+    conn = get_connection()
+    try:
+        with conn:  # 成功すれば commit、例外なら rollback
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO games
+                        (game_id, player, cells, game_running, winning_pattern)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (
+                        game.game_id,
+                        game.player,
+                        Json(game.cells),
+                        game.game_running,
+                        _json_or_none(game.winning_pattern),
+                    ),
+                )
+    finally:
+        conn.close()
 
 
 def get_game(game_id):
@@ -60,7 +84,6 @@ def update_game(game):
                     WHERE game_id = %s
                     """,
                     (
-                        game.game_id,
                         game.player,
                         Json(game.cells),
                         game.game_running,
