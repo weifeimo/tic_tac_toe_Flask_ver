@@ -1,0 +1,57 @@
+/* frontend/components/game.module.css */
+
+/* -------- BOARD -------- */
+.board {
+    display: grid;
+    grid-template-columns: 80px 80px 80px;
+    grid-template-rows: 80px 80px 80px;
+    gap: 5px;
+    margin: 0 auto;
+    width: max-content;
+    background-color: rgb(127, 117, 104);
+}
+
+.cell {
+    width: 80px;
+    height: 80px;
+    font-size: 72px;
+    color: darkred;
+    background-color: white;
+    border: 0;
+    user-select: none;
+}
+
+/* -------- TITLE（元の h2） -------- */
+.title {
+    text-align: center;
+    color: darkred;
+}
+
+/* -------- MESSAGE（元の h3） -------- */
+.message {
+    text-align: center;
+    font-weight: normal;
+    color: rgb(107, 49, 49);
+    background-color: rgb(223, 219, 211);
+}
+
+/* ----- MESSAGE & CELLS COLOR EXCHANGE ----- */
+/* ※ .cell より後ろに書くこと（同じ強さのとき、後のルールが優先されるため） */
+.winner {
+    background-color: darkred;
+    color: white;
+}
+
+.winnerMessage {
+    color: white;
+    background-color: darkred;
+}
+
+/* -------- RESTART -------- */
+.restart {
+    display: block;
+    margin: 20px auto 0;
+    padding: 10px 24px;
+    font-size: 1rem;
+    cursor: pointer;
+}
