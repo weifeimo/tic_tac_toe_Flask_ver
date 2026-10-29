@@ -46,6 +46,21 @@ async function post(url) {
   return requestJSON(url, { method: "POST" });
 }
 
+// GET /api/state は読み取り専用。ゲームがまだない（404）ときだけ新しく開始する。
+async function fetchOrStartGame() {
+  const response = await fetch("/api/state");
+
+  if (response.status === 404) {
+    return post("/api/start");
+  }
+
+  if (!response.ok) {
+    throw new Error(`HTTP error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 
 // ------------------------------------------------
 // サーバーから返されたデータの検証
@@ -219,7 +234,7 @@ async function runRequest(action, allowFailed = false) {
 
 async function loadGame() {
   await runRequest(async () => {
-    const state = await requestJSON("/api/state");
+    const state = await fetchOrStartGame();
 
     validateState(state);
 

@@ -38,7 +38,7 @@ def call(client, method, url):
 
 
 def test_state_persists_across_requests(client):
-    first = call(client, "get", "/api/state")
+    first = call(client, "post", "/api/start")
     call(client, "post", "/api/play/0")
 
     again = call(client, "get", "/api/state")  # 再読み込みに相当
@@ -79,3 +79,39 @@ def test_draw_flow(client):
 
     assert state["status"] == "draw"
     assert state["winning_pattern"] is None
+
+
+def test_state_without_game_returns_404_and_creates_nothing(client, monkeypatch):
+    inserted = []
+    monkeypatch.setattr(app_module, "insert_game", lambda game: inserted.append(game))
+
+    # 初回表示でリクエストが重複しても（React Strict Mode）、ゲームは作られない
+    first = client.get("/api/state")
+    second = client.get("/api/state")
+
+    assert first.status_code == 404
+    assert second.status_code == 404
+    assert first.get_json() == {"error": "game_not_found"}
+    assert inserted == []
+    with client.session_transaction() as sess:
+        assert "game_id" not in sess
+
+
+def test_play_without_game_returns_404_and_creates_nothing(client, monkeypatch):
+    inserted = []
+    monkeypatch.setattr(app_module, "insert_game", lambda game: inserted.append(game))
+
+    response = client.post("/api/play/0")
+
+    assert response.status_code == 404
+    assert inserted == []
+
+
+def test_state_returns_404_when_game_is_missing_in_db(client):
+    # session には game_id があるが、DB に該当行がない場合
+    with client.session_transaction() as sess:
+        sess["game_id"] = "00000000-0000-0000-0000-000000000000"
+
+    response = client.get("/api/state")
+
+    assert response.status_code == 404
