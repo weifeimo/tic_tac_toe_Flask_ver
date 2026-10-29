@@ -19,14 +19,14 @@ export default function Home() {
    * 通信中フラグとエラーを管理し、成功したら画面の状態を更新する。
    */
   const run = useCallback(async (action: () => Promise<GameState>) => {
-    setLoading(true);
-    setError(null);
+    setLoading(true);       // 「通信中」にする
+    setError(null);         // 前回のエラーを消す
     try {
-      setGame(await action());
+      setGame(await action());   // 成功 → 盤面を更新
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "不明なエラーが発生しました。");
     } finally {
-      setLoading(false);
+      setLoading(false);    // 成功でも失敗でも「通信中」を終わらせる
     }
   }, []);
 
