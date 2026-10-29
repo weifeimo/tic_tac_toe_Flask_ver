@@ -6,6 +6,7 @@ import type { GameState } from "@/types/game";
  * status: HTTP ステータスコード（ネットワーク障害など、レスポンスがない場合は null）
  */
 export class ApiError extends Error {
+/**                   JS の Error から継承 */
   status: number | null;
 
   constructor(message: string, status: number | null = null) {
@@ -19,6 +20,10 @@ export class ApiError extends Error {
  * 共通のリクエスト処理。
  * - /api/... は next.config.ts の rewrites で Flask に転送される（同一オリジンなので cookie も送られる）
  * - 通信失敗・HTTP エラー・JSON 解析エラーをすべて ApiError にまとめる
+ * 対応する内容：
+ * getState()       // GET /api/state
+ * startGame()      // POST /api/start
+ * play(position)   // POST /api/play/<position>
  */
 async function request(path: string, init?: RequestInit): Promise<GameState> {
   let response: Response;
@@ -35,6 +40,7 @@ async function request(path: string, init?: RequestInit): Promise<GameState> {
   }
 
   if (!response.ok) {
+    // 期待値：200-299。404、500などを排除
     throw new ApiError(
       `サーバーエラーが発生しました（${response.status}）。`,
       response.status,
