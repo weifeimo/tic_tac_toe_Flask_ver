@@ -55,9 +55,12 @@ npm run dev
 
 | メソッド | パス | 内容 |
 |---|---|---|
-| GET | `/api/state` | 現在のゲーム状態を取得（ページ再読み込み時の復元にも使用） |
-| POST | `/api/start` | 新しいゲームを開始 |
+| GET | `/api/state` | 現在のゲーム状態を取得（読み取り専用。ページ再読み込み時の復元にも使用。ゲームがなければ `404`） |
+| POST | `/api/start` | 新しいゲームを開始（ゲームの作成はここだけ） |
 | POST | `/api/play/<position>` | マス（0〜8）を選択 |
+
+初回表示では、`page.tsx` の `useEffect` が `GET /api/state` を呼び、`404`（ゲームなし）のときだけ `POST /api/start` を呼びます。
+`useEffect` のクリーンアップで「古い実行」を無視するため、開発時の React Strict Mode で Effect が2回走っても、ゲームの作成は1回だけです。
 
 ## ディレクトリ構成
 

@@ -30,10 +30,36 @@ export default function Home() {
     }
   }, []);
 
-  // 初回表示時（ページの再読み込み時も）に現在のゲーム状態を取得して復元する
+  // 初回表示時（ページの再読み込み時も）に、現在のゲームを復元する。
+  // 1. GET /api/state は読み取り専用。ゲームがなければ null が返る。
+  // 2. null のときだけ POST /api/start で新しいゲームを作る。
+  // 開発環境の React Strict Mode では Effect が「実行 → クリーンアップ → 再実行」と2回走る。
+  // クリーンアップで ignore = true にして、古い方の Effect が POST /api/start に進まないようにする。
+  // （ゲームの作成は最後に残った Effect の1回だけになる）
   useEffect(() => {
-    run(getState);
-  }, [run]);
+  let ignore = false;
+
+  (async () => {
+      try {
+        const current = await getState();
+        if (ignore) return;
+
+        const state = current ?? (await startGame());
+    if (ignore) return;
+
+        setGame(state);
+      } catch (e) {
+        if (ignore) return;
+        setError(e instanceof ApiError ? e.message : "不明なエラーが発生しました。");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+  })();
+
+    return () => {
+      ignore = true;
+    };
+}, []);
 
   const handleCellClick = (index: number) => run(() => play(index));
   const handleRestart = () => run(startGame);

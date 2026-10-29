@@ -85,11 +85,15 @@ npm run dev               # http://localhost:3000
 
 | メソッド | パス | 内容 |
 |---|---|---|
-| GET | `/api/state` | 現在のゲーム状態を取得（セッションにゲームがなければ新規作成） |
-| POST | `/api/start` | 新しいゲームを開始 |
-| POST | `/api/play/<position>` | マス（0〜8）を選択 |
+| GET | `/api/state` | 現在のゲーム状態を取得（読み取り専用。ゲームがなければ `404`） |
+| POST | `/api/start` | 新しいゲームを開始（ゲームの作成はここだけ） |
+| POST | `/api/play/<position>` | マス（0〜8）を選択（ゲームがなければ `404`） |
 
-レスポンスはすべて同じ形式の JSON です。
+`GET /api/state` と `POST /api/play/<position>` はゲームを新規作成しません。セッションに `game_id` がない、または DB に該当する行がない場合は、`404`（`{"error": "game_not_found"}`）を返します。
+初回表示では、フロントエンドが先に `GET /api/state` で復元を試み、`404` のときだけ `POST /api/start` を呼びます。
+これにより、初回表示のリクエストが重複しても（開発時の React Strict Mode など）、不要なゲームの行は作られません。
+
+成功したときのレスポンスは、すべて同じ形式の JSON です。
 
 ```json
 {

@@ -21,8 +21,8 @@ export class ApiError extends Error {
  * - /api/... は next.config.ts の rewrites で Flask に転送される（同一オリジンなので cookie も送られる）
  * - 通信失敗・HTTP エラー・JSON 解析エラーをすべて ApiError にまとめる
  * 対応する内容：
- * getState()       // GET /api/state
- * startGame()      // POST /api/start
+ * getState()       // GET /api/state（読み取り専用。ゲームがなければ null）
+ * startGame()      // POST /api/start（新しいゲームを作成）
  * play(position)   // POST /api/play/<position>
  */
 async function request(path: string, init?: RequestInit): Promise<GameState> {
@@ -54,9 +54,19 @@ async function request(path: string, init?: RequestInit): Promise<GameState> {
   }
 }
 
-/** 現在のゲーム状態を取得する（GET /api/state） */
-export function getState(): Promise<GameState> {
-  return request("/api/state");
+/**
+ * 現在のゲーム状態を取得する（GET /api/state）。読み取り専用で、ゲームは作成されない。
+ * まだゲームがない場合（サーバーが 404 を返す）は null を返す。
+ */
+export async function getState(): Promise<GameState | null> {
+  try {
+    return await request("/api/state");
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) {
+      return null;
+    }
+    throw e;
+  }
 }
 
 /** 新しいゲームを開始する（POST /api/start） */

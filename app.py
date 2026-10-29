@@ -13,20 +13,27 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")  # DEVELOPMENT o
 
 app.register_blueprint(db_check_bp)
 
-def load_game():
-    """session の game_id から DB のゲームを取得する。なければ新規作成して保存する。"""
-    game_id = session.get("game_id")
-    if game_id is not None:
-        game = get_game(game_id)
-        if game is not None:
-            return game
 
-    # session に game_id がない、または DB に該当行がない場合は新しく始める
+def find_game():
+    """session の game_id から DB のゲームを取得する。なければ None（新規作成はしない）。"""
+    game_id = session.get("game_id")
+    if game_id is None:
+        return None
+    return get_game(game_id)
+
+
+def create_game():
+    """新しいゲームを DB に登録し、session の game_id を差し替える。"""
     game = TicTacToe()
     game.start()
     insert_game(game)
     session["game_id"] = game.game_id
     return game
+
+
+def game_not_found():
+    # ゲームがまだない（または DB から消えた）ことを伝える。作成は POST /api/start の役割。
+    return jsonify({"error": "game_not_found"}), 404
 
 
 def save_game(game):
@@ -64,22 +71,24 @@ def index():
 
 @app.route("/api/state", methods=["GET"])
 def api_state():
-    game = load_game()
+    # 読み取り専用：呼び出しが重複しても DB に行は増えない
+    game = find_game()
+    if game is None:
+        return game_not_found()
     return jsonify(get_state(game))
 
 
 @app.route("/api/start", methods=["POST"])
 def api_start():
-    game = TicTacToe()
-    game.start()
-    insert_game(game)
-    session["game_id"] = game.game_id
+    game = create_game()
     return jsonify(get_state(game))
 
 
 @app.route("/api/play/<int:position>", methods=["POST"])
 def api_play(position):
-    game = load_game()
+    game = find_game()
+    if game is None:
+        return game_not_found()
     if 0 <= position < 9:
         game.play_turn(position)
         save_game(game)
