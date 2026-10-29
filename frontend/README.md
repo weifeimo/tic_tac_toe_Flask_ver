@@ -4,7 +4,7 @@ Flask + JavaScript で実装していた画面を、Next.js + TypeScript に置�
 ゲームのロジックと状態管理は、これまでどおり Flask と PostgreSQL が担当します。フロントエンドは API の結果を表示し、操作を送るだけです。
 
 ## Requirements
-- Node.js 20 以上（npm が使えること）
+- Node.js 24 以上（npm が使えることと、セキュリティーサポート継続中のバージョン）
 - バックエンド（Flask + PostgreSQL）が起動できること → 手順はプロジェクトルートの [README](../README.md) を参照
 
 ## Setup

@@ -8,7 +8,7 @@ Flask API + PostgreSQL + Next.js (TypeScript) で動く三目並べです。
 
 ## Requirements
 - Python 3.10+
-- Node.js 20+（npm）
+- Node.js 24+（npm）
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)（PostgreSQL を起動するために使用。事前に起動しておく）
 
 ## Setup
