@@ -1,25 +1,24 @@
-## Tic Tac Toe (Web-APP)
-### Flask and JavaScript version
+# Tic Tac Toe
 
-Instead of the previous one-page version which I wrote with PyScript,
-this version is updated with Flask and JavaScript.
+Flask API + PostgreSQL + Next.js (TypeScript) で動く三目並べです。
 
-### Previous version
-https://github.com/weifeimo/tic_tac_toe_PyScript_ver
-
+- バックエンド：Flask（ゲームのロジックと API）、PostgreSQL（ゲーム状態の保存）
+- フロントエンド：Next.js + TypeScript（`frontend/`）。画面表示と操作の送信だけを担当し、ゲームのロジックは持ちません。
+- Flask のセッションには `game_id` だけを保存し、盤面などの状態は DB から取得します。
 
 ## Requirements
 - Python 3.10+
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)（PostgreSQLをDockerで起動するために使用。事前に起動しておく）
-- Pythonライブラリ（`requirements.txt` に記載）: Flask / python-dotenv / psycopg2-binary / pytest
+- Node.js 24+（npm）
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)（PostgreSQL を起動するために使用。事前に起動しておく）
 
+## Setup
+
+### 1. Python ライブラリをインストールする
 ```bash
 pip install -r requirements.txt
 ```
 
-
-## Setup
-### 1. 環境変数を設定する
+### 2. 環境変数を設定する
 `.env.example` をコピーして `.env` を作成し、値（特にパスワード）を書き換えます。
 
 ```bash
@@ -28,189 +27,168 @@ cp .env.example .env        # Windows (PowerShell): Copy-Item .env.example .env
 
 | 変数名 | 内容 |
 |---|---|
-| `SECRET_KEY` | Flaskのセッション用の秘密鍵 |
+| `SECRET_KEY` | Flask のセッション用の秘密鍵（未設定の場合は開発用の値になる） |
 | `POSTGRES_DB` | データベース名 |
 | `POSTGRES_USER` | ユーザー名 |
 | `POSTGRES_PASSWORD` | パスワード |
 | `POSTGRES_HOST` | 接続先ホスト（ローカルは `localhost`） |
 | `POSTGRES_PORT` | ポート番号（通常 `5432`） |
 
-
-### 2. PostgreSQLを起動・停止する
+### 3. PostgreSQL を起動し、テーブルを作成する
 ```bash
-docker compose up -d      # 起動（バックグラウンド）
-docker compose ps         # 状態確認（healthy になれば準備完了）
-docker compose logs db    # ログ確認（接続できない時の原因調査用）
-docker compose down       # 停止（データは保持される）
-docker compose down -v    # 停止＋データも削除（DBを初期化したい時）
-```
+docker compose up -d      # 起動（healthy になれば準備完了。確認: docker compose ps）
 
-### 3. Flaskを起動して接続確認する
-```bash
-python app.py
-```
-
-ブラウザで http://127.0.0.1:5000/db-check を開きます。
-
-- 成功: `{"result": 1, "status": "ok"}`
-- 失敗: `{"message": "（原因）", "status": "error"}`
-
-## Troubleshooting
-| 症状 | 原因と対処 |
-|---|---|
-| `password authentication failed` | ① ローカルにインストール済みのPostgreSQLが5432番ポートを使っている → そのサービスを停止するか、`.env` の `POSTGRES_PORT` を `5433` などに変更して `docker compose up -d` をやり直す。② `.env` のユーザー名・パスワードを変更した → データボリュームに旧設定が残っているため `docker compose down -v` で初期化してから再起動 |
-| `Connection refused` | コンテナが起動していない。`docker compose ps` で確認し、`docker compose up -d` を実行 |
-| `環境変数が未設定です` | `.env` が存在しない、または項目が足りない。`.env.example` と見比べる |
-| `ModuleNotFoundError: psycopg2` | `pip install -r requirements.txt` を実行 |
-
-
-## データベース構成
-
-ゲームの状態は PostgreSQL の `games` テーブルに保存されます（1ゲーム = 1行のレコード作成）。Flask のセッションには `game_id` だけを保存し、盤面などの状態は DB から取得します。
-
-### テーブル構成
-
-テーブル定義は [`schema.sql`](schema.sql) にあります。
-
-```sql
-CREATE TABLE IF NOT EXISTS games (
-    game_id         UUID PRIMARY KEY,
-    player          INTEGER NOT NULL CHECK (player IN (0, 1)),
-    cells           JSONB NOT NULL CHECK (jsonb_array_length(cells) = 9),
-    game_running    BOOLEAN NOT NULL,
-    winning_pattern JSONB CHECK (winning_pattern IS NULL OR jsonb_array_length(winning_pattern) = 3)
-);
-```
-
-| カラム | 型 | NULL | 内容 |
-|---|---|---|---|
-| `game_id` | UUID | 不可 | ゲームの一意なID（主キー） |
-| `player` | INTEGER | 不可 | 現在の手番。`0` = X、`1` = O（勝敗が決まった後は最後に打ったプレイヤー） |
-| `cells` | JSONB | 不可 | 盤面。長さ9の配列で、左上から右下の順。`null` = 空き、`0` = X、`1` = O（例: `[0, 1, null, 0, 1, null, 0, null, null]`） |
-| `game_running` | BOOLEAN | 不可 | 対局中は `true`、勝敗または引き分けで終了すると `false` |
-| `winning_pattern` | JSONB | 可 | 勝った3マスの位置（例: `[0, 1, 2]`）。対局中と引き分けのときは SQL の `NULL` |
-
-### 関連ファイル
-
-| ファイル | 役割 |
-|---|---|
-| `schema.sql` | テーブル作成用の SQL |
-| `repository.py` | `games` テーブルの保存・取得・更新（`insert_game` / `get_game` / `update_game`） |
-| `app.py` | セッションの `game_id` をもとに DB からゲームを読み書きする |
-
-### テーブルの作成
-
-PostgreSQL のコンテナを起動した状態で、プロジェクトのルートで実行します。
-
-macOS / Linux:
-
-```
 set -a; source .env; set +a
 docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < schema.sql
 ```
 
-`CREATE TABLE IF NOT EXISTS` を使っているため、繰り返し実行してもエラーになりません。ただし、すでに旧い定義のテーブルがある場合は変更が反映されません。作り直す場合は `DROP TABLE games;` を実行してから再度作成してください。
+`CREATE TABLE IF NOT EXISTS` なので、繰り返し実行してもエラーになりません。
+旧い定義のテーブルがある場合は、`DROP TABLE games;` を実行してから作り直してください。
 
-テーブルの構造は次のコマンドで確認できます。
-
-```
-docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\d games'
-```
-
-> `source .env` は実行したターミナルでのみ有効です。新しいターミナルを開いた場合は、もう一度実行してください。
-
-## 動作確認手順
-
-### 1. 起動する
-
-```
-docker compose up -d      # PostgreSQL を起動
-docker compose ps         # healthy になるまで待つ
-python app.py
+その他のコマンド:
+```bash
+docker compose logs db    # ログ確認（接続できない時の原因調査用）
+docker compose down       # 停止（データは保持される）
+docker compose down -v    # 停止＋データも削除（DB を初期化したい時）
 ```
 
-ブラウザで [http://127.0.0.1:5000/](http://127.0.0.1:5000/) を開きます。
-
-### 2. 保存・再読み込みを確認する（DB に保存される）
-
-1. いくつかマスを選択する。
-2. 別のターミナルで DB の内容を確認する。`cells` が操作に合わせて更新されていれば OK。
-
-```
-docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT game_id, player, cells, game_running, winning_pattern FROM games;'
+### 4. フロントエンドの依存パッケージをインストールする
+```bash
+cd frontend
+npm install
 ```
 
-3. ブラウザを再読み込みする。盤面が保持されていれば OK。
+## 起動方法
 
-### 3. 勝敗判定を確認する
+ターミナルを2つ使います。
 
-1. 縦・横・斜めのいずれかを揃えて勝敗を決める。
-2. 画面で勝ったマスが表示されることを確認する。
-3. DB を確認する。`game_running` が `f`、`winning_pattern` に3マスの位置（例: `[0, 1, 2]`）が入っていれば OK。
-
-### 4. 引き分けを確認する
-
-マスを次の順に選択すると引き分けになります（X が先手）。
-
+**1. Flask（プロジェクトのルートで実行）**
+```bash
+python app.py             # http://127.0.0.1:5001
 ```
-0 → 1 → 2 → 4 → 3 → 5 → 7 → 6 → 8
-```
+接続確認: http://127.0.0.1:5001/db-check を開き、`{"result": 1, "status": "ok"}` が表示されれば OK です。
 
-画面に引き分けが表示され、DB では `game_running` が `f`、`winning_pattern` が `NULL` であれば OK。次のコマンドで `NULL` と JSON の `null` を区別して確認できます。
+> macOS では AirPlay レシーバーが 5000 番ポートを使うため、Flask は 5001 番で起動します。
 
-```
-docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT game_id, winning_pattern IS NULL AS is_sql_null FROM games WHERE game_running = false;'
+**2. Next.js（`frontend/` で実行）**
+```bash
+npm run dev               # http://localhost:3000
 ```
 
-### 5. リスタートを確認する
+ブラウザで http://localhost:3000 を開きます。
 
-1. リスタートボタンを押す。盤面が空になることを確認する。
-2. DB を確認する。新しい `game_id` の行が追加され、以前の対局の行も残っていれば OK。
-3. 再読み込みしても、新しい対局の状態が表示されることを確認する。
+`/api/*` へのリクエストは、`frontend/next.config.ts` の `rewrites` で Flask に転送されます。
+ブラウザからは同一オリジンに見えるため、セッション cookie がそのまま使え、CORS の設定は不要です。
+転送先を変える場合は、`frontend/.env.local` に `FLASK_URL=http://127.0.0.1:5001` の形式で指定します（変更後は `npm run dev` を再起動）。
 
-### 6. 自動テストを実行する（任意）
+## API
 
+| メソッド | パス | 内容 |
+|---|---|---|
+| GET | `/api/state` | 現在のゲーム状態を取得（読み取り専用。ゲームがなければ `404`） |
+| POST | `/api/start` | 新しいゲームを開始（ゲームの作成はここだけ） |
+| POST | `/api/play/<position>` | マス（0〜8）を選択（ゲームがなければ `404`） |
+
+`GET /api/state` と `POST /api/play/<position>` はゲームを新規作成しません。セッションに `game_id` がない、または DB に該当する行がない場合は、`404`（`{"error": "game_not_found"}`）を返します。
+初回表示では、フロントエンドが先に `GET /api/state` で復元を試み、`404` のときだけ `POST /api/start` を呼びます。
+これにより、初回表示のリクエストが重複しても（開発時の React Strict Mode など）、不要なゲームの行は作られません。
+
+成功したときのレスポンスは、すべて同じ形式の JSON です。
+
+```json
+{
+  "game_id": "…",
+  "cells": [0, 1, null, null, null, null, null, null, null],
+  "player": 0,
+  "game_running": true,
+  "status": "playing",
+  "winner": null,
+  "winning_pattern": null
+}
 ```
+
+| フィールド | 内容 |
+|---|---|
+| `cells` | 盤面。長さ9で、左上から右下の順。`null` = 空き、`0` = X、`1` = O |
+| `player` | 現在の手番（`0` = X、`1` = O）。終了後は切り替わらず、最後に打ったプレイヤーのまま |
+| `game_running` | 対局中は `true`、勝敗または引き分けで `false` |
+| `status` | `"playing"` / `"win"` / `"draw"` |
+| `winner` | 勝者（`0` / `1`）。勝敗が決まっていないとき・引き分けのときは `null` |
+| `winning_pattern` | 勝った3マスの位置（例: `[0, 1, 2]`）。なければ `null` |
+
+## データベース構成
+
+ゲームの状態は `games` テーブルに保存されます（1ゲーム = 1行）。定義は [`schema.sql`](schema.sql) にあります。
+
+| カラム | 型 | NULL | 内容 |
+|---|---|---|---|
+| `game_id` | UUID | 不可 | ゲームの一意な ID（主キー） |
+| `player` | INTEGER | 不可 | 現在の手番（`0` = X、`1` = O） |
+| `cells` | JSONB | 不可 | 盤面（長さ9の配列） |
+| `game_running` | BOOLEAN | 不可 | 対局中は `true` |
+| `winning_pattern` | JSONB | 可 | 勝った3マスの位置。対局中と引き分けのときは SQL の `NULL` |
+
+テーブルの内容を確認するコマンド:
+```bash
+docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT * FROM games;'
+```
+
+## 動作確認
+
+Flask と Next.js を起動した状態で、http://localhost:3000 を開いて確認します。
+
+1. マスを選ぶと、X と O が交互に表示される。
+2. 縦・横・斜めを揃えると勝者が表示され、勝ったマスが強調される。盤面は操作できなくなる。
+3. 引き分けを確認する。次の順にマスを選ぶ（X が先手）: `0 → 1 → 2 → 4 → 3 → 5 → 7 → 6 → 8`。`Draw!` が表示される。
+4. ゲーム終了後に `RESTART` を押すと、盤面が空になる。DB には新しい `game_id` の行が追加され、以前の対局の行も残る。
+5. 対局の途中でページを再読み込みしても、盤面が保持されている。
+6. Flask を停止した状態でマスを選ぶと、エラーメッセージが表示される。
+
+動作確認で作成した行をすべて削除する場合:
+```bash
+docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'DELETE FROM games;'
+```
+
+### 自動テスト
+PostgreSQL を起動した状態で、プロジェクトのルートで実行します。
+```bash
 pytest -v
 ```
 
-`tests/` の内容は、保存・取得・更新（`repository.py`）と、API を通したゲームの進行・勝敗・引き分け・リスタートの確認です。PostgreSQL が起動している必要があります。
+## Troubleshooting
 
-### テストデータの削除
-
-動作確認で作成した行をすべて削除する場合:
-
-```
-docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'DELETE FROM games;'
-```
+| 症状 | 原因と対処 |
+|---|---|
+| `password authentication failed` | ① ローカルにインストール済みの PostgreSQL が 5432 番ポートを使っている → そのサービスを停止するか、`.env` の `POSTGRES_PORT` を `5433` などに変更して `docker compose up -d` をやり直す。② `.env` のユーザー名・パスワードを変更した → 旧設定がデータボリュームに残っているため、`docker compose down -v` で初期化してから再起動 |
+| `Connection refused` | コンテナが起動していない。`docker compose ps` で確認し、`docker compose up -d` を実行 |
+| `環境変数が未設定です` | `.env` が存在しない、または項目が足りない。`.env.example` と見比べる |
+| `relation "games" does not exist` | テーブルが未作成。「Setup の 3」の `schema.sql` を実行する |
+| `ModuleNotFoundError: psycopg2` | `pip install -r requirements.txt` を実行 |
+| `/api/state` が 403 | macOS の AirPlay レシーバーが 5000 番ポートを使っている。Flask は 5001 番で起動する |
+| `/api/state` が 500 | Flask 側のターミナルのエラーを確認する（DB 未起動・テーブル未作成が多い） |
+| 画面に「サーバーに接続できませんでした」と出る | Flask が起動していない、または転送先のポートが違う。設定を直したら `npm run dev` を再起動する |
+| `Missing script: "dev"` | `frontend/` ではない場所で実行している。`cd frontend` してから実行 |
 
 ## Project Structure
 ```
 tic_tac_toe/
 ├── app.py                # Flask アプリ本体（API とセッション管理）
 ├── game.py               # ゲームのロジック（TicTacToe クラス）
-├── repository.py         # games テーブルの保存・取得・更新（CRUD）
+├── repository.py         # games テーブルの保存・取得・更新
 ├── db_check.py           # DB 接続と接続確認（/db-check）
 ├── schema.sql            # games テーブルの作成用 SQL
 ├── docker-compose.yml    # PostgreSQL の起動設定
 ├── requirements.txt
-├── pytest.ini            # pytest の設定（プロジェクトルートを import パスに追加）
-├── conftest.py           # テスト時に .env を読み込む
+├── pytest.ini
 ├── .env.example          # 環境変数のサンプル
-├── .github/
-│   └── workflows/        # GitHub Actions の設定
-├── templates/
-│   └── index.html
-├── static/
-│   ├── style.css
-│   └── script.js
-└── tests/
-    ├── conftest.py
-    ├── test_api.py
-    ├── test_app.py
-    ├── test_game.py
-    └── test_repository.py
+├── .github/workflows/    # GitHub Actions の設定
+├── templates/            # 旧フロントエンド（Flask + JavaScript）
+├── static/               # 旧フロントエンド（Flask + JavaScript）
+├── tests/                # pytest
+└── frontend/             # Next.js + TypeScript のフロントエンド
+    ├── app/              # ページとレイアウト
+    ├── components/       # Board / Cell / StatusMessage / RestartButton
+    ├── lib/api.ts        # Flask API の呼び出しとエラー処理
+    ├── types/game.ts     # API レスポンスの型
+    └── next.config.ts    # /api/* を Flask へ転送する設定
 ```
-
-## How to Play
-run `app.py`

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# 環境変数（パスワードなどの秘密情報を含む）
+.env
+
+# ゲーム結果の出力ファイル（game.py が作成する）
+game_results.json
+
+# Node.js（念のため）
+node_modules/
+
+# macOS
+.DS_Store
