@@ -54,7 +54,7 @@ export default function Home() {
         if (ignore) return;
 
         const state = current ?? (await startGame());
-    if (ignore) return;
+        if (ignore) return;
 
         setGame(state);
       } catch (e) {
