@@ -3,11 +3,20 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Board from "@/components/Board";
-import RestartButton from "@/components/RestartButton";
 import StatusMessage from "@/components/StatusMessage";
+import RestartButton from "@/components/RestartButton";
 import styles from "@/components/game.module.css";
 import { ApiError, getState, play, startGame } from "@/lib/api";
 import type { GameState } from "@/types/game";
+
+/**
+ * 通信エラー後の再同期用。
+ * サーバー上の最新の状態を取得し、ゲームがなければ（session 切れなど）新しく開始する。
+ * ※ 初回表示の useEffect では使わない（Strict Mode 対策の ignore チェックを間に挟むため）
+ */
+async function resyncGame(): Promise<GameState> {
+  return (await getState()) ?? (await startGame());
+}
 
 export default function Home() {
   const [game, setGame] = useState<GameState | null>(null); // サーバーから取得したゲーム状態
@@ -63,13 +72,17 @@ export default function Home() {
 
   const handleCellClick = (index: number) => run(() => play(index));
   const handleRestart = () => run(startGame);
+  const handleSync = () => run(resyncGame);
 
-  // 盤面を操作できない条件：通信中・状態未取得・ゲーム終了
-  const boardDisabled = loading || !game || !game.game_running;
+  // 通信エラー後は、サーバーの最新状態と一致しているか分からない。
+  // 再同期に成功して error が消えるまで、盤面と RESTART は操作できないようにする。
+  const needsSync = error !== null;
 
-  // RESTART ボタンは、ゲーム終了後だけ表示する（元の実装と同じ）
-  // 初回取得に失敗して盤面がない場合も、やり直せるように表示する
-  const showRestart = game ? !game.game_running : error !== null;
+  // 盤面を操作できない条件：通信中・状態未取得・ゲーム終了・再同期が必要
+  const boardDisabled = loading || !game || !game.game_running || needsSync;
+
+  // RESTART ボタンは、ゲーム終了後だけ表示する（再同期が必要なときは表示しない）
+  const showRestart = !needsSync && game !== null && !game.game_running;
 
   return (
     <main>
@@ -87,6 +100,17 @@ export default function Home() {
       )}
 
       {showRestart && <RestartButton disabled={loading} onClick={handleRestart} />}
+
+      {needsSync && (
+        <button
+          type="button"
+          className={styles.resync}
+          onClick={handleSync}
+          disabled={loading}
+        >
+          RETRY SYNC
+        </button>
+      )}
     </main>
   );
 }
