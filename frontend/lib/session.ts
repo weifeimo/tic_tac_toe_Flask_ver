@@ -2,6 +2,7 @@ import 'server-only'
 import { SignJWT, jwtVerify } from 'jose'
 import { SessionPayload } from '@/lib/definitions'
 import { cookies } from 'next/headers'
+import { db } from '@/lib/db/db'
 
 const secretKey = process.env.SESSION_SECRET
 const encodedKey = new TextEncoder().encode(secretKey)
@@ -25,10 +26,22 @@ export async function decrypt(session: string | undefined = '') {
   }
 }
 
-// ログイン状態の作成
-export async function createSession(userId: string) {
+// ログイン状態の作成（DBにセッションを作成し、CookieにJWTを保存する）
+export async function createSession(userId: number) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  const session = await encrypt({ userId, expiresAt })
+  // Create a session in the database
+  const data = await db
+    .insert(sessions)
+    .values({
+      userId,
+      expiresAt,
+    })
+    .returning({ id: sessions.id })
+
+  const sessionId = data[0].id
+  const session = await encrypt({ sessionId, expiresAt })
+
+  // Store the session in cookies for optimistic auth checks
   const cookieStore = await cookies()
   cookieStore.set('session', session, {
     httpOnly: true,
