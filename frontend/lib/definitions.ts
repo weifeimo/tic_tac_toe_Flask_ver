@@ -26,7 +26,8 @@ export type FormState =
     }
   | undefined
 
-  export type SessionPayload = {
-  userId: string
+// JWT に入れる内容。DB の sessions.id（uuid）を指す
+export type SessionPayload = {
+  sessionId: string
   expiresAt: Date
 }
