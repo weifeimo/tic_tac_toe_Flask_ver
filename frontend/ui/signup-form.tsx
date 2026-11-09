@@ -10,13 +10,23 @@ export default function SignupForm() {
     <form action={action}>
       <div>
         <label htmlFor="name">Name</label>
-        <input id="name" name="name" placeholder="Name" />
+        <input
+          id="name"
+          name="name"
+          placeholder="Name"
+          autoComplete="username"
+        />
       </div>
       {state?.errors?.name && <p>{state.errors.name}</p>}
 
       <div>
         <label htmlFor="password">Password</label>
-        <input id="password" name="password" type="password" />
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+        />
       </div>
       {state?.errors?.password && (
         <div>
@@ -28,8 +38,11 @@ export default function SignupForm() {
           </ul>
         </div>
       )}
+
+      {state?.message && <p role="alert">{state.message}</p>}
+
       <button disabled={pending} type="submit">
-        Sign Up
+        {pending ? 'Signing up...' : 'Sign Up'}
       </button>
     </form>
   )
