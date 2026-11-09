@@ -8,6 +8,7 @@ import RestartButton from "@/components/RestartButton";
 import styles from "@/components/game.module.css";
 import { ApiError, getState, play, startGame } from "@/lib/api";
 import type { GameState } from "@/types/game";
+import LogoutButton from "@/components/LogoutButton";
 
 /**
  * 通信エラー後の再同期用。
@@ -86,6 +87,7 @@ export default function Home() {
 
   return (
     <main>
+        <LogoutButton />
       <h2 className={styles.title}>TIC TAC TOE</h2>
 
       <StatusMessage game={game} loading={loading} error={error} />
