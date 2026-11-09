@@ -1,5 +1,5 @@
-// frontend/app/page.tsx
-"use client"; // useState / useEffect を使うため、クライアントコンポーネントにする
+// frontend/components/Game.tsx
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import Board from "@/components/Board";
@@ -8,7 +8,6 @@ import RestartButton from "@/components/RestartButton";
 import styles from "@/components/game.module.css";
 import { ApiError, getState, play, startGame } from "@/lib/api";
 import type { GameState } from "@/types/game";
-import LogoutButton from "@/components/LogoutButton";
 
 /**
  * 通信エラー後の再同期用。
@@ -19,7 +18,7 @@ async function resyncGame(): Promise<GameState> {
   return (await getState()) ?? (await startGame());
 }
 
-export default function Home() {
+export default function Game() {
   const [game, setGame] = useState<GameState | null>(null); // サーバーから取得したゲーム状態
   const [loading, setLoading] = useState(true);              // 通信中かどうか
   const [error, setError] = useState<string | null>(null);   // エラーメッセージ
@@ -86,8 +85,7 @@ export default function Home() {
   const showRestart = !needsSync && game !== null && !game.game_running;
 
   return (
-    <main>
-        <LogoutButton />
+    <div>
       <h2 className={styles.title}>TIC TAC TOE</h2>
 
       <StatusMessage game={game} loading={loading} error={error} />
@@ -113,6 +111,6 @@ export default function Home() {
           RETRY SYNC
         </button>
       )}
-    </main>
+    </div>
   );
 }
