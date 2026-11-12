@@ -10,18 +10,18 @@ export default function SignupForm() {
   return (
     <form action={action}>
         <div>
-          <label htmlFor="name">Name</label>
+          <label htmlFor="name">Name </label>
           <input
             id="name"
             name="name"
-            placeholder="Name"
+            placeholder="user"
             autoComplete="username"
           />
         </div>
         {state?.errors?.name && <p>{state.errors.name}</p>}
 
         <div>
-          <label htmlFor="password">Password</label>
+          <label htmlFor="password">Password </label>
           <input
             id="password"
             name="password"
