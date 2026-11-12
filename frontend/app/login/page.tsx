@@ -14,6 +14,7 @@ export default function LoginPage() {
       <div className={styles.redline}></div>
       <h2 className={styles.loginTitle}>Log In</h2>
       <div className={styles.redline}></div>
+      <div style={{ marginBottom: "32px" }}></div>
       <LoginForm />
     </main>
   )

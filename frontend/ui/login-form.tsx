@@ -10,7 +10,7 @@ export default function LoginForm() {
   return (
     <form action={action}>
 
-        <div>
+        <div className={styles.card}>
           <label htmlFor="name">Name </label>
           <input
             id="name"
@@ -21,7 +21,7 @@ export default function LoginForm() {
         </div>
         {state?.errors?.name && <p>{state.errors.name}</p>}
 
-        <div>
+        <div className={styles.card}>
           <label htmlFor="password">Password </label>
           <input
             id="password"
@@ -33,7 +33,7 @@ export default function LoginForm() {
         {state?.errors?.password && <p>{state.errors.password}</p>}
         {state?.message && <p role="alert">{state.message}</p>}
 
-      <button disabled={pending} type="submit" className={styles.restart}>
+      <button disabled={pending} type="submit" className={styles.submit}>
         {pending ? 'Logging in...' : 'Confirm'}
       </button>
     </form>

@@ -12,7 +12,10 @@ export default function SignupPage() {
         </Link>
       </div>
 
-      <h2 className={styles.signupTitle}>Sign Up</h2>
+      <div className={styles.redline2}></div>
+      <h2 className={styles.signupTitle}>Create Your Account</h2>
+      <div className={styles.redline2}></div>
+      <div style={{ marginBottom: "32px" }}></div>
       <SignupForm />
 
     </main>

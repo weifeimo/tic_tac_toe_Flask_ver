@@ -9,7 +9,7 @@ export default function SignupForm() {
 
   return (
     <form action={action}>
-        <div>
+        <div className={styles.card}>
           <label htmlFor="name">Name </label>
           <input
             id="name"
@@ -20,7 +20,7 @@ export default function SignupForm() {
         </div>
         {state?.errors?.name && <p>{state.errors.name}</p>}
 
-        <div>
+        <div className={styles.card}>
           <label htmlFor="password">Password </label>
           <input
             id="password"
@@ -42,8 +42,8 @@ export default function SignupForm() {
 
       {state?.message && <p role="alert">{state.message}</p>}
 
-      <button disabled={pending} type="submit" className={styles.restart}>
-        {pending ? 'Signing up...' : 'Confirm'}
+      <button disabled={pending} type="submit" className={styles.submit}>
+        {pending ? 'Signing up...' : 'Submit'}
       </button>
     </form>
   )
