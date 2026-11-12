@@ -10,7 +10,7 @@ export default async function Home() {
   return (
     <main>
       <div className={styles.userBar}>
-        <span className={styles.textdefault}>Welcome, {user.username}</span>
+        <span className={styles.textDefault}>Welcome, {user.username}</span>
         <LogoutButton />
       </div>
 

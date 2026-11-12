@@ -6,7 +6,7 @@ export default function LoginPage() {
   return (
     <main>
       <div className={styles.userBar}>
-        <span className={styles.textdefault}>Don&apos;t have an account?</span>
+        <span className={styles.textDefault}>Don&apos;t have an account?</span>
         <Link href="/signup" className={styles.BarButton}>
           Sign up
         </Link>
