@@ -6,7 +6,7 @@ import styles from "./game.module.css";
 export default function LogoutButton() {
   return (
     <form action={logout} className={styles.logoutForm}>
-      <button type="submit" className={styles.logout}>
+      <button type="submit" className={styles.BarButton}>
         LOG OUT
       </button>
     </form>

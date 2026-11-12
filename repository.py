@@ -11,7 +11,7 @@ def _json_or_none(value):
         return None
 
 
-def insert_game(game):
+def insert_game(game, user_id):
     """新しいゲームを games テーブルに1行追加する。"""
     conn = get_connection()
     try:
@@ -21,11 +21,12 @@ def insert_game(game):
                     #SQL
                     """
                     INSERT INTO games
-                        (game_id, player, cells, game_running, winning_pattern)
-                    VALUES (%s, %s, %s, %s, %s)
+                        (game_id, user_id, player, cells, game_running, winning_pattern)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     """,
                     (
                         game.game_id,
+                        user_id,
                         game.player,
                         Json(game.cells),
                         game.game_running,
@@ -36,8 +37,8 @@ def insert_game(game):
         conn.close()
 
 
-def get_game(game_id):
-    """game_id で1局を取得して TicTacToe（Python list）にして返す。なければ None。"""
+def get_game(game_id, user_id):
+    """game_id と user_id が両方一致する1局を取得する。なければ None。"""
     conn = get_connection()
     try:
         with conn.cursor() as cur:
@@ -46,9 +47,9 @@ def get_game(game_id):
                 """
                 SELECT game_id, player, cells, game_running, winning_pattern
                 FROM games
-                WHERE game_id = %s
+                WHERE game_id = %s AND user_id = %s
                 """,
-                (game_id,), #tuple要素、SQLパラメータに渡す。文字列ではない。
+                (game_id, user_id),
             )
             row = cur.fetchone()
     finally:

@@ -1,32 +1,46 @@
 import os
 from dotenv import load_dotenv
 
-from flask import Flask, jsonify, render_template, session
+from flask import Flask, g, jsonify, render_template, session
 from game import TicTacToe
+from auth import get_current_user_id
 from repository import get_game, insert_game, update_game
 from db_check import bp as db_check_bp
+from functools import wraps
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")  # DEVELOPMENT only
+app.config["SESSION_COOKIE_NAME"] = "flask_session"
 
 app.register_blueprint(db_check_bp)
 
+def login_required(view):
+    """未ログインなら 401 を返す。ログイン中なら g.user_id に user_id を入れる。"""
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        user_id = get_current_user_id()
+        if user_id is None:
+            return jsonify({"error": "unauthorized"}), 401
+        g.user_id = user_id
+        return view(*args, **kwargs)
+    return wrapper
+
 
 def find_game():
-    """session の game_id から DB のゲームを取得する。なければ None（新規作成はしない）。"""
+    """session の game_id から、ログイン中ユーザーのゲームを取得する。なければ None。"""
     game_id = session.get("game_id")
     if game_id is None:
         return None
-    return get_game(game_id)
+    return get_game(game_id, g.user_id)
 
 
 def create_game():
-    """新しいゲームを DB に登録し、session の game_id を差し替える。"""
+    """新しいゲームをログイン中ユーザーのものとして DB に登録する。"""
     game = TicTacToe()
     game.start()
-    insert_game(game)
+    insert_game(game, g.user_id)
     session["game_id"] = game.game_id
     return game
 
@@ -70,6 +84,7 @@ def index():
 
 
 @app.route("/api/state", methods=["GET"])
+@login_required
 def api_state():
     # 読み取り専用：呼び出しが重複しても DB に行は増えない
     game = find_game()
@@ -79,12 +94,14 @@ def api_state():
 
 
 @app.route("/api/start", methods=["POST"])
+@login_required
 def api_start():
     game = create_game()
     return jsonify(get_state(game))
 
 
 @app.route("/api/play/<int:position>", methods=["POST"])
+@login_required
 def api_play(position):
     game = find_game()
     if game is None:

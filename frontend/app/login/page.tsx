@@ -1,14 +1,20 @@
 import Link from 'next/link'
 import LoginForm from '@/ui/login-form'
+import styles from "@/components/game.module.css";
 
 export default function LoginPage() {
   return (
     <main>
-      <h1>Log In</h1>
+      <div className={styles.userBar}>
+        <span className={styles.textdefault}>Don&apos;t have an account?</span>
+        <Link href="/signup" className={styles.BarButton}>
+          Sign up
+        </Link>
+      </div>
+      <div className={styles.redline}></div>
+      <h2 className={styles.loginTitle}>Log In</h2>
+      <div className={styles.redline}></div>
       <LoginForm />
-      <p>
-        Don&apos;t have an account? <Link href="/signup">Sign up</Link>
-      </p>
     </main>
   )
 }
