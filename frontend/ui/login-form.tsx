@@ -19,7 +19,6 @@ export default function LoginForm() {
             autoComplete="username"
           />
         </div>
-        {state?.errors?.name && <p>{state.errors.name}</p>}
 
         <div className={styles.card}>
           <label htmlFor="password">Password </label>
@@ -30,8 +29,12 @@ export default function LoginForm() {
             autoComplete="current-password"
           />
         </div>
-        {state?.errors?.password && <p>{state.errors.password}</p>}
-        {state?.message && <p role="alert">{state.message}</p>}
+
+      <div className={styles.card3}>
+        {state?.errors?.name && <p className={styles.errors}>{state.errors.name}</p>}
+        {state?.errors?.password && <p className={styles.errors}>{state.errors.password}</p>}
+        {state?.message && <p className={styles.errors} role="alert">{state.message}</p>}
+      </div>
 
       <button disabled={pending} type="submit" className={styles.submit}>
         {pending ? 'Logging in...' : 'Confirm'}

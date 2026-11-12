@@ -18,7 +18,6 @@ export default function SignupForm() {
             autoComplete="username"
           />
         </div>
-        {state?.errors?.name && <p>{state.errors.name}</p>}
 
         <div className={styles.card}>
           <label htmlFor="password">Password </label>
@@ -29,18 +28,22 @@ export default function SignupForm() {
             autoComplete="new-password"
           />
         </div>
-        {state?.errors?.password && (
-          <div>
-            <p>Password must:</p>
-            <ul>
-              {state.errors.password.map((error) => (
-                <li key={error}>- {error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
 
-      {state?.message && <p role="alert">{state.message}</p>}
+        <div className={styles.card2}>
+          {state?.errors?.name && <p className={styles.errors}>{state.errors.name}</p>}
+          {state?.errors?.password && (
+            <div className={styles.errors}>
+              <p>Password must:</p>
+              <ul className={styles.errorList}>
+                {state.errors.password.map((error) => (
+                  <li key={error}>- {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {state?.message && <p className={styles.errors} role="alert">{state.message}</p>}
+        </div>
+
 
       <button disabled={pending} type="submit" className={styles.submit}>
         {pending ? 'Signing up...' : 'Submit'}

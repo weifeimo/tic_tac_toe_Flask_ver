@@ -15,7 +15,7 @@ export default function SignupPage() {
       <div className={styles.redline2}></div>
       <h2 className={styles.signupTitle}>Create Your Account</h2>
       <div className={styles.redline2}></div>
-      <div style={{ marginBottom: "32px" }}></div>
+      <div style={{ marginBottom: "36px" }}></div>
       <SignupForm />
 
     </main>

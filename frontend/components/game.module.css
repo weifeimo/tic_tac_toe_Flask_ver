@@ -125,6 +125,7 @@
     margin:0;
 }
 
+/* 装飾ライン */
 .redline{
     position: absolute;
     left: 0;
@@ -141,6 +142,7 @@
     background-color: rgb(107, 49, 49);
 }
 
+/* ログイン＆サイアップ用　ボタン */
 .submit {
     display: block;
     margin-top: 28px;
@@ -156,6 +158,7 @@
     cursor: not-allowed;
 }
 
+/* フォーム用 */
 .card {
     margin-left: auto;
     margin-right: auto;
@@ -164,4 +167,42 @@
     box-sizing: border-box;
     padding: 8px;
     text-align: right;
+}
+
+.card2 {
+    margin-left: auto;
+    margin-right: auto;
+    transform: translateX(+50px);
+    width: min(calc(100% - 32px), 360px);
+    box-sizing: border-box;
+    padding: 8px;
+    text-align: right;
+}
+
+.card3 {
+    margin-left: auto;
+    margin-right: auto;
+    transform: translateX(+100px);
+    width: min(calc(100% - 32px), 360px);
+    box-sizing: border-box;
+    padding: 8px;
+    text-align: right;
+}
+
+/* エラー文字 */
+.errors {
+    margin-top: 16px;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: darkred;
+    text-align: left;
+}
+
+.errors p {
+    margin: 0;
+}
+
+.errorList {
+    margin: 2px 0 0;
+    padding-left: 1.2em;
 }
