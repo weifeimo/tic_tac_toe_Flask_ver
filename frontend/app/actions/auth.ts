@@ -1,6 +1,11 @@
 'use server'
 
-import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
+import {
+  randomBytes,
+  scrypt as scryptCallback,
+  timingSafeEqual,
+  type ScryptOptions,
+} from 'node:crypto'
 import { promisify } from 'node:util'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -12,7 +17,15 @@ import { sessions, users } from '@/lib/db/schema'
 import { SignupFormSchema, FormState } from '@/lib/definitions'
 import { createSession, decrypt, deleteSession } from '@/lib/session'
 
-const scrypt = promisify(scryptCallback)
+// promisify(scrypt) は @types/node のバージョンによって options 付きの
+// オーバーロードが推論されない（引数 3 つ扱いになる）ため、型を明示する。
+// options を省略した場合は Node.js のデフォルトパラメータで動作する（旧形式の検証で使用）。
+const scrypt = promisify(scryptCallback) as (
+  password: string,
+  salt: Buffer,
+  keylen: number,
+  options?: ScryptOptions,
+) => Promise<Buffer>
 
 // ログイン/登録後の遷移先（proxy.ts の保護ルートと合わせて調整してください）
 const AFTER_AUTH_PATH = '/'
@@ -56,12 +69,12 @@ const LoginFormSchema = z.object({
 async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16)
 
-  const hash = (await scrypt(
+  const hash = await scrypt(
     password,
     salt,
     KEY_LENGTH,
     SCRYPT_PARAMS_BY_VERSION[CURRENT_VERSION],
-  )) as Buffer
+  )
 
   return `scrypt$${CURRENT_VERSION}$${salt.toString('hex')}$${hash.toString('hex')}`
 }
@@ -96,7 +109,7 @@ async function verifyPassword(password: string, stored: string): Promise<VerifyR
 
     if (salt.length !== 16 || expected.length !== KEY_LENGTH) return INVALID
 
-    actual = (await scrypt(password, salt, expected.length, options)) as Buffer
+    actual = await scrypt(password, salt, expected.length, options)
 
     // 古いバージョンのハッシュは、ログイン成功後に最新バージョンへ移行する
     needsRehash = version !== CURRENT_VERSION
@@ -123,7 +136,7 @@ async function verifyPassword(password: string, stored: string): Promise<VerifyR
     }
 
     // 旧形式は変更前の Node.js デフォルトパラメータで検証する
-    actual = (await scrypt(password, salt, expected.length)) as Buffer
+    actual = await scrypt(password, salt, expected.length)
 
     // 旧形式は一律で新形式へ移行する
     needsRehash = true
