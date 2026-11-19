@@ -20,6 +20,26 @@ const LOGIN_PATH = '/login'
 
 const KEY_LENGTH = 64
 
+// scrypt のパラメータ（OWASP Password Storage Cheat Sheet を参考）
+// バージョンごとにパラメータを定義しておくことで、将来パラメータを変更しても
+// 既存のハッシュを検証でき、ログイン成功時に最新バージョンへ移行できる。
+// 一度公開したバージョンのパラメータは変更しないこと（新しいバージョンを追加する）。
+const SCRYPT_PARAMS_BY_VERSION = {
+  v1: {
+    N: 2 ** 17,
+    r: 8,
+    p: 1,
+    maxmem: 256 * 1024 * 1024,
+  },
+} as const
+
+type ScryptVersion = keyof typeof SCRYPT_PARAMS_BY_VERSION
+const CURRENT_VERSION: ScryptVersion = 'v1'
+
+// 旧形式のパスワードハッシュとの互換性を維持するための設定
+// 旧形式は Node.js のデフォルトパラメータで生成されている
+const LEGACY_KEY_LENGTH = 64
+
 // ログイン用のスキーマ。
 // 登録時のパスワードは SignupFormSchema 側で .trim() されてからハッシュ化されるため、
 // ログイン時も同じ前処理（trim）をしないと照合が一致しなくなる。
@@ -29,23 +49,90 @@ const LoginFormSchema = z.object({
 })
 
 // ---------------------------------------------------------------------------
-// パスワードハッシュ（Node 標準の scrypt を使用。追加パッケージ不要）
-// 保存形式: "<salt hex>:<hash hex>"
+// パスワードハッシュ
+// 保存形式: "scrypt$<version>$<salt hex>$<hash hex>"
+// version は SCRYPT_PARAMS_BY_VERSION のパラメータセットに対応する
 // ---------------------------------------------------------------------------
 async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16)
-  const hash = (await scrypt(password, salt, KEY_LENGTH)) as Buffer
-  return `${salt.toString('hex')}:${hash.toString('hex')}`
+
+  const hash = (await scrypt(
+    password,
+    salt,
+    KEY_LENGTH,
+    SCRYPT_PARAMS_BY_VERSION[CURRENT_VERSION],
+  )) as Buffer
+
+  return `scrypt$${CURRENT_VERSION}$${salt.toString('hex')}$${hash.toString('hex')}`
 }
 
-async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  const [saltHex, hashHex] = stored.split(':')
-  if (!saltHex || !hashHex) return false
+type VerifyResult = { valid: boolean; needsRehash: boolean }
+const INVALID: VerifyResult = { valid: false, needsRehash: false }
 
-  const expected = Buffer.from(hashHex, 'hex')
-  const actual = (await scrypt(password, Buffer.from(saltHex, 'hex'), expected.length)) as Buffer
+// 検証結果に加えて、保存されているハッシュを最新のパラメータで
+// 作り直すべきか（needsRehash）も返す。
+async function verifyPassword(password: string, stored: string): Promise<VerifyResult> {
+  const parts = stored.split('$')
 
-  return actual.length === expected.length && timingSafeEqual(actual, expected)
+  let salt: Buffer
+  let expected: Buffer
+  let actual: Buffer
+  let needsRehash: boolean
+
+  // 新形式: アルゴリズムとパラメータバージョンを確認する
+  if (parts.length === 4 && parts[0] === 'scrypt') {
+    const [, version, saltHex, hashHex] = parts
+
+    // 未知のバージョンは拒否（DB の値から任意のパラメータを読み込まない）
+    if (!Object.hasOwn(SCRYPT_PARAMS_BY_VERSION, version)) return INVALID
+    const options = SCRYPT_PARAMS_BY_VERSION[version as ScryptVersion]
+
+    if (!/^[0-9a-f]+$/i.test(saltHex) || !/^[0-9a-f]+$/i.test(hashHex)) {
+      return INVALID
+    }
+
+    salt = Buffer.from(saltHex, 'hex')
+    expected = Buffer.from(hashHex, 'hex')
+
+    if (salt.length !== 16 || expected.length !== KEY_LENGTH) return INVALID
+
+    actual = (await scrypt(password, salt, expected.length, options)) as Buffer
+
+    // 古いバージョンのハッシュは、ログイン成功後に最新バージョンへ移行する
+    needsRehash = version !== CURRENT_VERSION
+
+  // 旧形式: "<salt hex>:<hash hex>"
+  // 既存ユーザーのパスワードを引き続き検証できるようにする
+  } else if (parts.length === 1 && stored.includes(':')) {
+    const [saltHex, hashHex] = stored.split(':')
+
+    if (
+      !saltHex ||
+      !hashHex ||
+      !/^[0-9a-f]+$/i.test(saltHex) ||
+      !/^[0-9a-f]+$/i.test(hashHex)
+    ) {
+      return INVALID
+    }
+
+    salt = Buffer.from(saltHex, 'hex')
+    expected = Buffer.from(hashHex, 'hex')
+
+    if (salt.length !== 16 || expected.length !== LEGACY_KEY_LENGTH) {
+      return INVALID
+    }
+
+    // 旧形式は変更前の Node.js デフォルトパラメータで検証する
+    actual = (await scrypt(password, salt, expected.length)) as Buffer
+
+    // 旧形式は一律で新形式へ移行する
+    needsRehash = true
+  } else {
+    return INVALID
+  }
+
+  const valid = actual.length === expected.length && timingSafeEqual(actual, expected)
+  return { valid, needsRehash: valid && needsRehash }
 }
 
 // Postgres の一意制約違反（23505）。Drizzle のバージョンによりエラーが cause に包まれるため両方確認する
@@ -128,8 +215,22 @@ export async function login(state: FormState, formData: FormData): Promise<FormS
       return invalidCredentials
     }
 
-    if (!(await verifyPassword(password, user.password))) {
+    const result = await verifyPassword(password, user.password)
+    if (!result.valid) {
       return invalidCredentials
+    }
+
+    // 旧形式 / 旧バージョンのハッシュは、ログイン成功後に最新のパラメータへ移行する。
+    // 移行に失敗してもログイン自体は成功させる。
+    if (result.needsRehash) {
+      try {
+        await db
+          .update(users)
+          .set({ password: await hashPassword(password) })
+          .where(eq(users.id, user.id))
+      } catch (error) {
+        console.error('password rehash failed:', error)
+      }
     }
 
     userId = user.id
