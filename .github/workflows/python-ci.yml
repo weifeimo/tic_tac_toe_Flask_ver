@@ -49,6 +49,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # schema.sql に users / sessions / games(user_id) が含まれていること
       - name: Create database schema
         env:
           PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
@@ -63,8 +64,9 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f schema.sql
 
-
       - name: Run tests
         env:
           SECRET_KEY: test-secret-key
+          # テストが作るログイン用 JWT の署名鍵（Flask の auth.py も同じ値で検証する）
+          SESSION_SECRET: test-session-secret-0123456789abcdef
         run: python -m pytest -v

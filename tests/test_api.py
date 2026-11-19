@@ -1,41 +1,19 @@
-import pytest
+"""DB に保存される動作、404、ユーザーごとのデータ分離のテスト。
 
-import app as app_module
-from db_check import get_connection
-
-
-@pytest.fixture
-def client(monkeypatch, tmp_path):
-    monkeypatch.setattr("game.RESULT_FILE", str(tmp_path / "game_results.json"))
-    app_module.app.config["TESTING"] = True
-
-    created_ids = []
-    with app_module.app.test_client() as client:
-        client.created_ids = created_ids
-        yield client
-
-    # テストで作った行だけ削除する
-    if created_ids:
-        conn = get_connection()
-        try:
-            with conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        "DELETE FROM games WHERE game_id = ANY(%s::uuid[])",
-                        (created_ids,),
-                    )
-        finally:
-            conn.close()
+client / make_client は conftest.py のフィクスチャ（ログイン済みのクライアント）。
+テストで作ったユーザーと、そのユーザーの games は、テスト終了後に conftest.py が削除する。
+"""
+from helpers import COOKIE_NAME, create_session, fetch_one, make_token
 
 
 def call(client, method, url):
-    """リクエストを送り、返ってきた game_id を後片付け用に記録する。"""
-    response = getattr(client, method)(url)
-    data = response.get_json()
-    if data["game_id"] not in client.created_ids:
-        client.created_ids.append(data["game_id"])
-    return data
+    """リクエストを送り、レスポンスの JSON を返す。"""
+    return getattr(client, method)(url).get_json()
 
+
+# ------------------------------------------------
+# 保存と復元
+# ------------------------------------------------
 
 def test_state_persists_across_requests(client):
     first = call(client, "post", "/api/start")
@@ -81,9 +59,25 @@ def test_draw_flow(client):
     assert state["winning_pattern"] is None
 
 
+def test_game_is_kept_after_logging_in_again(client):
+    # ログアウト → 再ログインで新しいセッション（cookie）になっても、同じユーザーなら自分の局が見える
+    first = call(client, "post", "/api/start")
+    call(client, "post", "/api/play/0")
+
+    client.set_cookie(COOKIE_NAME, make_token(create_session(client.user_id)))
+
+    again = call(client, "get", "/api/state")
+    assert again["game_id"] == first["game_id"]
+    assert again["cells"][0] == 0
+
+
+# ------------------------------------------------
+# ゲームが見つからない（404）
+# ------------------------------------------------
+
 def test_state_without_game_returns_404_and_creates_nothing(client, monkeypatch):
     inserted = []
-    monkeypatch.setattr(app_module, "insert_game", lambda game: inserted.append(game))
+    monkeypatch.setattr("app.insert_game", lambda game, user_id: inserted.append(game))
 
     # 初回表示でリクエストが重複しても（React Strict Mode）、ゲームは作られない
     first = client.get("/api/state")
@@ -99,7 +93,7 @@ def test_state_without_game_returns_404_and_creates_nothing(client, monkeypatch)
 
 def test_play_without_game_returns_404_and_creates_nothing(client, monkeypatch):
     inserted = []
-    monkeypatch.setattr(app_module, "insert_game", lambda game: inserted.append(game))
+    monkeypatch.setattr("app.insert_game", lambda game, user_id: inserted.append(game))
 
     response = client.post("/api/play/0")
 
@@ -115,3 +109,44 @@ def test_state_returns_404_when_game_is_missing_in_db(client):
     response = client.get("/api/state")
 
     assert response.status_code == 404
+
+
+# ------------------------------------------------
+# ユーザーごとのデータ分離
+# ------------------------------------------------
+
+def test_started_game_is_saved_with_the_logged_in_user_id(client):
+    state = call(client, "post", "/api/start")
+
+    row = fetch_one("SELECT user_id FROM games WHERE game_id = %s", (state["game_id"],))
+
+    assert row is not None
+    assert row[0] == client.user_id
+
+
+def test_other_user_cannot_read_the_game(make_client):
+    owner = make_client()
+    other = make_client()
+    started = call(owner, "post", "/api/start")
+
+    # other の session に owner の game_id が入っていても（推測・盗用されても）取得できない
+    with other.session_transaction() as sess:
+        sess["game_id"] = started["game_id"]
+    response = other.get("/api/state")
+
+    assert response.status_code == 404
+    assert response.get_json() == {"error": "game_not_found"}
+
+
+def test_other_user_cannot_play_in_the_game(make_client):
+    owner = make_client()
+    other = make_client()
+    started = call(owner, "post", "/api/start")
+
+    with other.session_transaction() as sess:
+        sess["game_id"] = started["game_id"]
+    response = other.post("/api/play/0")
+
+    assert response.status_code == 404
+    # owner の盤面は変わっていない
+    assert call(owner, "get", "/api/state")["cells"] == [None] * 9

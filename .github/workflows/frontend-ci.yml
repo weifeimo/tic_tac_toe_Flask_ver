@@ -54,6 +54,9 @@ jobs:
         env:
           # next.config.ts の rewrites 用。ビルド時は Flask に接続しないのでダミーで足りる
           FLASK_URL: http://127.0.0.1:5001
+          # lib/session.ts / lib/db/db.ts は読み込み時に必須チェックをするため、ダミー値が必要
+          SESSION_SECRET: ci-dummy-session-secret-0123456789abcdef
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           NEXT_TELEMETRY_DISABLED: "1"
         run: npm run build
 
