@@ -144,20 +144,38 @@ export async function login(state: FormState, formData: FormData): Promise<FormS
 
 // ---------------------------------------------------------------------------
 // ログアウト
-// Cookie を消すだけでなく、DB 上のセッションも削除して即座に無効化する
+// DB のセッション行を削除できた場合のみ Cookie を消してログアウト完了とする。
+// 削除に失敗した場合は Cookie を残したままエラーを返し、再試行できるようにする。
 // ---------------------------------------------------------------------------
-export async function logout() {
+export type LogoutState = { message?: string } | undefined
+
+async function deleteSessionRow(sessionId: string): Promise<void> {
+  const MAX_ATTEMPTS = 2 // 一時的な DB エラーに備えて 1 回だけ再試行
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await db.delete(sessions).where(eq(sessions.id, sessionId))
+      return
+    } catch (error) {
+      if (attempt >= MAX_ATTEMPTS) throw error
+    }
+  }
+}
+
+export async function logout(_state: LogoutState): Promise<LogoutState> {
   const token = (await cookies()).get('session')?.value
   const payload = await decrypt(token)
 
+  // Cookie が無い/不正な場合は DB 側に消すものが無いので、そのまま Cookie 削除へ進む
   if (typeof payload?.sessionId === 'string') {
     try {
-      await db.delete(sessions).where(eq(sessions.id, payload.sessionId))
+      await deleteSessionRow(payload.sessionId)
     } catch (error) {
       console.error('failed to delete session row:', error)
+      // Cookie は削除せず、ログアウト成功として扱わない
+      return { message: 'ログアウトに失敗しました。もう一度お試しください。' }
     }
   }
 
   await deleteSession()
-  redirect(LOGIN_PATH)
+  redirect(LOGIN_PATH) // redirect() は例外を投げるので try/catch の外
 }
