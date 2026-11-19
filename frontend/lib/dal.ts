@@ -8,32 +8,31 @@ import { decrypt } from '@/lib/session'
 import { db } from '@/lib/db/db'
 import { sessions, users } from '@/lib/db/schema'
 
-export const verifySession = cache(async () => {
+// DB から session をチェックする。無効の場合は null を返し、redirect はしない
+export const getSession = cache(async () => {
   const cookie = (await cookies()).get('session')?.value
   const session = await decrypt(cookie)
 
-  if (typeof session?.sessionId !== 'string') {
-    redirect('/login')
-  }
+  if (typeof session?.sessionId !== 'string') return null
 
-  const data = await db
+  const [row] = await db
     .select({ userId: sessions.userId })
     .from(sessions)
     .where(
       and(
         eq(sessions.id, session.sessionId),
-        gt(sessions.expiresAt, new Date()) // 期限切れのセッションは無効
+        gt(sessions.expiresAt, new Date())
       )
     )
+    .limit(1)
 
-  if (data.length === 0) {
-    redirect('/login')
-  }
+  return row ? { isAuth: true as const, userId: row.userId } : null
+})
 
-  return {
-    isAuth: true,
-    userId: data[0].userId,
-  }
+export const verifySession = cache(async () => {
+  const session = await getSession()
+  if (!session) redirect('/login')
+  return session
 })
 
 // ログイン中のユーザー情報を取得する（password は取得しない）

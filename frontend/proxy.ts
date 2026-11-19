@@ -33,11 +33,6 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL('/login', req.nextUrl))
   }
 
-  // ログイン済でログインページやサインアップページを閲覧 → ゲームページ
-  if (isPublicRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL(AFTER_AUTH_PATH, req.nextUrl))
-  }
-
   return NextResponse.next()
 }
 
