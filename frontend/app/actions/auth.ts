@@ -25,7 +25,7 @@ const KEY_LENGTH = 64
 // ログイン時も同じ前処理（trim）をしないと照合が一致しなくなる。
 const LoginFormSchema = z.object({
   name: z.string().trim().min(1, { error: 'Please enter your username.' }),
-  password: z.string().trim().min(1, { error: 'Please enter your password.' }),
+  password: z.string().min(1, { error: 'Please enter your password.' }),
 })
 
 // ---------------------------------------------------------------------------
