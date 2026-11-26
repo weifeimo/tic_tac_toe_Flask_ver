@@ -6,7 +6,8 @@ __pycache__/
 venv/
 
 # 環境変数（パスワードなどの秘密情報を含む）
-.env
+.env*
+!.env.example
 
 # ゲーム結果の出力ファイル（game.py が作成する）
 game_results.json

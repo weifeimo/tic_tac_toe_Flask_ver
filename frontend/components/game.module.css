@@ -71,3 +71,138 @@
 .resync:hover {
     background-color: rgb(118, 78, 78);
 }
+
+/* -------- LOGOUT -------- */
+.logoutForm {
+    margin: 0;
+}
+
+.BarButton {
+    padding: 4px 12px;
+    color: darkred;
+    background-color: white;
+    border: 1px solid darkred;
+    cursor: pointer;
+}
+
+.BarButton:hover {
+    color: white;
+    background-color: darkred;
+}
+
+.userBar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 16px;
+}
+
+.textDefault {
+    color: rgb(107, 49, 49);
+}
+
+.formGroup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 45vh;
+    height: 50vh;
+    margin: 0 auto;
+}
+
+.signupTitle {
+    text-align: center;
+    font-weight: bold;
+    color: rgb(107, 49, 49);
+    background-color: rgb(223, 219, 211);
+    margin:0;
+}
+
+.loginTitle {
+    text-align: center;
+    color: darkred;
+    margin:0;
+}
+
+/* 装飾ライン */
+.redline{
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: darkred;
+}
+
+.redline2{
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: rgb(107, 49, 49);
+}
+
+/* ログイン＆サイアップ用　ボタン */
+.submit {
+    display: block;
+    margin-top: 28px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 6px 12px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* フォーム用 */
+.card {
+    margin-left: auto;
+    margin-right: auto;
+    transform: translateX(-50px);
+    width: min(calc(100% - 32px), 360px);
+    box-sizing: border-box;
+    padding: 8px;
+    text-align: right;
+}
+
+.card2 {
+    margin-left: auto;
+    margin-right: auto;
+    transform: translateX(+50px);
+    width: min(calc(100% - 32px), 360px);
+    box-sizing: border-box;
+    padding: 8px;
+    text-align: right;
+}
+
+.card3 {
+    margin-left: auto;
+    margin-right: auto;
+    transform: translateX(+100px);
+    width: min(calc(100% - 32px), 360px);
+    box-sizing: border-box;
+    padding: 8px;
+    text-align: right;
+}
+
+/* エラー文字 */
+.errors {
+    margin-top: 16px;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: darkred;
+    text-align: left;
+}
+
+.errors p {
+    margin: 0;
+}
+
+.errorList {
+    margin: 2px 0 0;
+    padding-left: 1.2em;
+}
